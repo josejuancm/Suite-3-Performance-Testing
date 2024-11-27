@@ -82,9 +82,17 @@ jobs:
     - name: Get Storage Account Name
       id: storage
       run: |
-        terraform output -json > tf_output.json
-        STORAGE_ACCOUNT=$(jq -r '.azure_storage_tfstate.value' tf_output.json)
-        echo "Storage account name: $STORAGE_ACCOUNT"
+        echo "Raw terraform output:"
+        terraform output
+        
+        echo "JSON terraform output:"
+        terraform output -json
+        
+        STORAGE_ACCOUNT=$(terraform output azure_storage_tfstate)
+
+        STORAGE_ACCOUNT=$(echo "$STORAGE_ACCOUNT" | tr -d '"' | tr -d '\n' | tr -d ' ')
+        
+        echo "Extracted storage account: $STORAGE_ACCOUNT"
         echo "storage_account=${STORAGE_ACCOUNT}" >> $GITHUB_OUTPUT
       shell: bash
 

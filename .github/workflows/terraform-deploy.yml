@@ -70,7 +70,7 @@ jobs:
         sql_admin_password="${{ secrets.SQL_ADMIN_PASSWORD }}"
         EOF
 
-    - name: Terraform Init
+    - name: Initial Terraform Init
       run: terraform init
 
     - name: Terraform Plan
@@ -78,3 +78,25 @@ jobs:
       
     - name: Terraform Apply
       run: terraform apply -auto-approve tfplan
+
+    - name: Get Storage Account Name
+      id: storage
+      run: |
+        STORAGE_ACCOUNT=$(terraform output -raw azure_storage_tfstate)
+        echo "storage_account=${STORAGE_ACCOUNT}" >> $GITHUB_OUTPUT
+
+    - name: Create backend.tf
+      run: |
+        cat > backend.tf << EOF
+        terraform {
+          backend "azurerm" {
+            resource_group_name  = "${{ github.event.inputs.prefix }}-${{ github.event.inputs.label }}"
+            storage_account_name = "${{ steps.storage.outputs.storage_account }}"
+            container_name      = "tfstate"
+            key                = "terraform.tfstate"
+          }
+        }
+        EOF
+
+    - name: Migrate State to Azure
+      run: terraform init -migrate-state -force-copy

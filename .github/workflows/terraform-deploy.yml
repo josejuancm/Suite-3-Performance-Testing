@@ -82,8 +82,9 @@ jobs:
     - name: Get Storage Account Name
       id: storage
       run: |
-        STORAGE_ACCOUNT=$(terraform output -raw azure_storage_tfstate)
+        STORAGE_ACCOUNT=$(terraform output -raw azure_storage_tfstate | tr -d '\n')
         echo "storage_account=${STORAGE_ACCOUNT}" >> $GITHUB_OUTPUT
+      shell: bash
 
     - name: Create backend.tf
       run: |

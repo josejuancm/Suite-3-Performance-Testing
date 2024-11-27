@@ -29,6 +29,17 @@ jobs:
 
     - name: Terraform Init
       run: terraform init
+      id: init
 
     - name: Terraform Destroy
-      run: terraform destroy -auto-approve 
+      run: |
+        terraform destroy -auto-approve -input=false -no-color
+      id: destroy
+      continue-on-error: true
+
+    - name: Terraform Destroy Status
+      if: steps.destroy.outcome == 'failure'
+      run: |
+        echo "Terraform destroy failed. Checking state..."
+        terraform show
+        exit 1

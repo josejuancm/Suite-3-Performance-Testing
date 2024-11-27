@@ -33,7 +33,15 @@ jobs:
 
     - name: Terraform Destroy
       run: |
-        terraform destroy -auto-approve -input=false -no-color
+        terraform destroy -auto-approve -input=false -no-color \
+          -var="prefix=${{ vars.TF_VAR_PREFIX }}" \
+          -var="label=${{ vars.TF_VAR_LABEL }}" \
+          -var="web_admin_username=${{ vars.TF_VAR_WEB_ADMIN_USERNAME }}" \
+          -var="web_admin_password=${{ secrets.TF_VAR_WEB_ADMIN_PASSWORD }}" \
+          -var="runner_admin_username=${{ vars.TF_VAR_RUNNER_ADMIN_USERNAME }}" \
+          -var="runner_admin_password=${{ secrets.TF_VAR_RUNNER_ADMIN_PASSWORD }}" \
+          -var="sql_admin_username=${{ vars.TF_VAR_SQL_ADMIN_USERNAME }}" \
+          -var="sql_admin_password=${{ secrets.TF_VAR_SQL_ADMIN_PASSWORD }}"
       id: destroy
       continue-on-error: true
 

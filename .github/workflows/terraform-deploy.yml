@@ -82,17 +82,14 @@ jobs:
     - name: Get Storage Account Name
       id: storage
       run: |
-        # First, save the output to a file
         terraform output -json > tf_output.json
-        # Extract just the storage account name using jq
         STORAGE_ACCOUNT=$(jq -r '.azure_storage_tfstate.value' tf_output.json)
-        echo "Storage account name: $STORAGE_ACCOUNT"  # Debug output
+        echo "Storage account name: $STORAGE_ACCOUNT"
         echo "storage_account=${STORAGE_ACCOUNT}" >> $GITHUB_OUTPUT
       shell: bash
 
     - name: Create backend.tf
       run: |
-        # Add debug output
         echo "Using storage account: ${{ steps.storage.outputs.storage_account }}"
         cat > backend.tf << EOF
         terraform {
@@ -104,15 +101,12 @@ jobs:
           }
         }
         EOF
-        # Show the created file for debugging
         cat backend.tf
 
     - name: Migrate State to Azure
       run: |
-        # Add some debugging information
         echo "Current directory contents:"
         ls -la
         echo "Backend configuration:"
         cat backend.tf
-        # Perform the migration
         terraform init -migrate-state -force-copy

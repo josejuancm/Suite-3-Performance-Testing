@@ -116,8 +116,10 @@ jobs:
 
     - name: Create backend.tf
       run: |
-        # Debug: Show what we received
-        echo "Received storage account: ${{ steps.storage.outputs.storage_account }}"
+        # Create a more descriptive state file name
+        STATE_FILE="${{ github.event.inputs.prefix }}-${{ github.event.inputs.label }}.tfstate"
+        
+        echo "Using state file name: ${STATE_FILE}"
         
         # Create the backend configuration
         cat > backend.tf << EOF
@@ -126,7 +128,7 @@ jobs:
             resource_group_name  = "${{ github.event.inputs.prefix }}-${{ github.event.inputs.label }}"
             storage_account_name = "${{ steps.storage.outputs.storage_account }}"
             container_name      = "tfstate"
-            key                = "terraform.tfstate"
+            key                = "${STATE_FILE}"
           }
         }
         EOF

@@ -156,57 +156,75 @@ jobs:
         EOF
       working-directory: ./eng/terraform
 
-    - name: Terraform Destroy
+    - name: Terraform Destroy with Recovery
       run: |
-        # Verify tfvars exists
-        if [ ! -f "terraform.tfvars" ]; then
-          echo "❌ terraform.tfvars file is missing!"
-          echo "Current directory contents:"
-          ls -la
-          exit 1
+        # Check if errored.tfstate exists from previous attempt
+        if [ -f "errored.tfstate" ]; then
+          echo "Found errored.tfstate from previous attempt"
+          cp errored.tfstate terraform.tfstate
         fi
-        
-        echo "📋 Current terraform.tfvars contents:"
-        cat terraform.tfvars
         
         # First try to remove the VM extension
         echo "Attempting to remove VM extension..."
         terraform state rm module.runner_config.azurerm_virtual_machine_extension.script_install || true
         
+        # Switch to local state temporarily
+        echo "Switching to local state..."
+        cat > backend.tf << EOF
+        terraform {
+          backend "local" {}
+        }
+        EOF
+        
+        # Reinitialize with local backend
+        terraform init -migrate-state -force-copy
+        
         # Now attempt the destroy
         echo "Starting terraform destroy..."
-        terraform destroy -auto-approve -var-file=terraform.tfvars -parallelism=1
+        terraform destroy -auto-approve -var-file=terraform.tfvars -parallelism=1 || {
+          # If destroy fails, try to continue with remaining resources
+          echo "Initial destroy failed. Attempting to continue..."
+          
+          # List remaining resources
+          echo "Remaining resources:"
+          terraform state list || true
+          
+          # Try to remove any storage account resources from state
+          echo "Removing storage account from state..."
+          terraform state rm azurerm_storage_account.tf_state || true
+          
+          # Try destroy again
+          echo "Attempting final destroy..."
+          terraform destroy -auto-approve -var-file=terraform.tfvars -parallelism=1
+        }
       id: destroy
       continue-on-error: true
       working-directory: ./eng/terraform
 
-    - name: Handle Destroy Failure
-      if: steps.destroy.outcome == 'failure'
+    - name: Cleanup Check
+      if: always()
       run: |
-        echo "Terraform destroy failed. Attempting recovery..."
+        echo "Checking for remaining resources in resource group..."
+        RESOURCE_GROUP="${{ inputs.prefix }}-${{ inputs.label }}"
         
-        # Verify tfvars exists again
-        if [ ! -f "terraform.tfvars" ]; then
-          echo "❌ terraform.tfvars file is missing in recovery step!"
-          echo "Current directory contents:"
-          ls -la
-          exit 1
+        # List any remaining resources
+        echo "Remaining Azure resources:"
+        az resource list --resource-group "$RESOURCE_GROUP" --query "[].{name:name, type:type}" -o table || {
+          if [[ $? -eq 3 ]]; then
+            echo "Resource group not found - cleanup successful!"
+            exit 0
+          else
+            echo "Error checking resources"
+            exit 1
+          fi
+        }
+        
+        # If we get here and there are resources, try to delete the resource group
+        if az group exists --name "$RESOURCE_GROUP"; then
+          echo "Attempting to delete entire resource group..."
+          az group delete --name "$RESOURCE_GROUP" --yes --no-wait
+          echo "Resource group deletion initiated"
         fi
-        
-        # List current state
-        echo "Current state resources:"
-        terraform state list || true
-        
-        # Try to remove problematic resources from state
-        echo "Attempting to remove problematic resources from state..."
-        terraform state list | grep "azurerm_virtual_machine_extension" | while read resource; do
-          echo "Removing $resource from state..."
-          terraform state rm "$resource" || true
-        done
-        
-        # Try destroy again
-        echo "Attempting destroy again..."
-        terraform destroy -auto-approve -var-file=terraform.tfvars -parallelism=1
       working-directory: ./eng/terraform
 
     - name: Terraform Destroy Status

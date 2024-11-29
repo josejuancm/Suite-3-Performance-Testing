@@ -3,20 +3,19 @@ name: 'Terraform Destroy'
 on:
   workflow_dispatch:
     inputs:
-      resource_group_name:
-        description: 'Resource group name containing the tfstate'
+      prefix:
+        description: 'Resource Prefix'
         required: true
-      storage_account_name:
-        description: 'Storage account name containing the tfstate'
+        default: 'jar'
+      label:
+        description: 'Environment Label'
         required: true
-      container_name:
-        description: 'Container name containing the tfstate'
+        default: 'ods-perf-test'
+      environment:
+        description: 'Environment to destroy'
         required: true
-        default: 'tfstate'
-      state_key:
-        description: 'State file name'
-        required: true
-        default: 'terraform.tfstate'
+        type: environment
+        default: 'development'
 
 permissions:
   contents: read
@@ -43,25 +42,49 @@ jobs:
       uses: hashicorp/setup-terraform@v2
 
     - name: Terraform Init
-      run: terraform init -backend-config="resource_group_name=${{ inputs.resource_group_name }}" -backend-config="storage_account_name=${{ inputs.storage_account_name }}" -backend-config="container_name=${{ inputs.container_name }}" -backend-config="key=${{ inputs.state_key }}"
+      run: terraform init -backend-config="resource_group_name=${{ inputs.prefix }}-${{ inputs.label }}" -backend-config="storage_account_name=${{ steps.storage.outputs.storage_account }}" -backend-config="container_name=tfstate" -backend-config="key=${{ inputs.prefix }}-${{ inputs.label }}.tfstate"
       id: init
 
     - name: Validate State File
       run: |
+        # Calculate the same state file name as used in deploy
+        STATE_FILE="${{ inputs.prefix }}-${{ inputs.label }}.tfstate"
+        RESOURCE_GROUP="${{ inputs.prefix }}-${{ inputs.label }}"
+        
         echo "🔍 Validating state file details:"
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        echo "Resource Group: ${{ inputs.resource_group_name }}"
-        echo "Storage Account: ${{ inputs.storage_account_name }}"
-        echo "Container: ${{ inputs.container_name }}"
-        echo "State Key: ${{ inputs.state_key }}"
+        echo "Resource Group: ${RESOURCE_GROUP}"
+        echo "Container: tfstate"
+        echo "State Key: ${STATE_FILE}"
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        
+        # List available storage accounts in the resource group
+        echo "📦 Available storage accounts in resource group:"
+        az storage account list --resource-group ${RESOURCE_GROUP} --query "[].name" -o tsv
+        
+        # Get the storage account name (should match the pattern used in deploy)
+        STORAGE_ACCOUNT=$(az storage account list --resource-group ${RESOURCE_GROUP} --query "[0].name" -o tsv)
+        
+        if [ -z "$STORAGE_ACCOUNT" ]; then
+          echo "❌ No storage account found in resource group ${RESOURCE_GROUP}"
+          exit 1
+        fi
+        
+        echo "Using storage account: ${STORAGE_ACCOUNT}"
+        
+        # Initialize Terraform with the correct backend config
+        terraform init -backend=true \
+          -backend-config="resource_group_name=${RESOURCE_GROUP}" \
+          -backend-config="storage_account_name=${STORAGE_ACCOUNT}" \
+          -backend-config="container_name=tfstate" \
+          -backend-config="key=${STATE_FILE}"
         
         # Check if we can access the backend
         echo "🔄 Verifying backend access..."
-        terraform init -backend=true -backend-config="resource_group_name=${{ inputs.resource_group_name }}" \
-          -backend-config="storage_account_name=${{ inputs.storage_account_name }}" \
-          -backend-config="container_name=${{ inputs.container_name }}" \
-          -backend-config="key=${{ inputs.state_key }}" -reconfigure
+        terraform init -backend=true -backend-config="resource_group_name=${{ inputs.prefix }}-${{ inputs.label }}" \
+          -backend-config="storage_account_name=${{ steps.storage.outputs.storage_account }}" \
+          -backend-config="container_name=tfstate" \
+          -backend-config="key=${{ inputs.prefix }}-${{ inputs.label }}.tfstate" -reconfigure
         
         # Try to show state
         if terraform show > /dev/null 2>&1; then

@@ -46,7 +46,21 @@ jobs:
       id: init
 
     - name: Validate State File
+      env:
+        ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+        ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
       run: |
+        # Login to Azure CLI
+        echo "🔐 Authenticating with Azure..."
+        az login --service-principal \
+          --username "$ARM_CLIENT_ID" \
+          --password "$ARM_CLIENT_SECRET" \
+          --tenant "$ARM_TENANT_ID"
+        
+        az account set --subscription "$ARM_SUBSCRIPTION_ID"
+        
         # Calculate the same state file name as used in deploy
         STATE_FILE="${{ inputs.prefix }}-${{ inputs.label }}.tfstate"
         RESOURCE_GROUP="${{ inputs.prefix }}-${{ inputs.label }}"

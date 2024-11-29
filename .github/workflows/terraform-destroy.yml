@@ -42,6 +42,20 @@ jobs:
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
 
+    - name: Azure Login
+      run: |
+        echo "🔐 Authenticating with Azure..."
+        az login --service-principal \
+          --username "$ARM_CLIENT_ID" \
+          --password "$ARM_CLIENT_SECRET" \
+          --tenant "$ARM_TENANT_ID"
+        
+        echo "Setting subscription..."
+        az account set --subscription "$ARM_SUBSCRIPTION_ID"
+        
+        echo "✅ Azure authentication successful"
+      working-directory: ./eng/terraform
+
     - name: Create backend.tf
       run: |
         # Calculate the same state file name as used in deploy
@@ -116,15 +130,6 @@ jobs:
         echo "⏳ Waiting for 30 seconds before proceeding..."
         echo "   Press Ctrl+C to cancel if this is not the correct state file"
         sleep 30
-      working-directory: ./eng/terraform
-
-    - name: Azure Login
-      run: |
-        az login --service-principal \
-          --username "$ARM_CLIENT_ID" \
-          --password "$ARM_CLIENT_SECRET" \
-          --tenant "$ARM_TENANT_ID"
-        az account set --subscription "$ARM_SUBSCRIPTION_ID"
       working-directory: ./eng/terraform
 
     - name: Terraform Destroy

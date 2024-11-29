@@ -56,33 +56,40 @@ jobs:
         echo "State Key: ${{ inputs.state_key }}"
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         
+        # Check if we can access the backend
+        echo "🔄 Verifying backend access..."
+        terraform init -backend=true -backend-config="resource_group_name=${{ inputs.resource_group_name }}" \
+          -backend-config="storage_account_name=${{ inputs.storage_account_name }}" \
+          -backend-config="container_name=${{ inputs.container_name }}" \
+          -backend-config="key=${{ inputs.state_key }}" -reconfigure
+        
+        # Try to show state
         if terraform show > /dev/null 2>&1; then
-          echo "✅ State file successfully loaded!"
+          echo "✅ State file accessed successfully!"
           echo "📋 Current state contents:"
           
-          # First, show the human-readable output
-          echo "Terraform State (human-readable):"
-          terraform show
-          
-          # Then try to get resource count using terraform state list
-          RESOURCES=$(terraform state list)
-          if [ -n "$RESOURCES" ]; then
-            echo "Resources found in state:"
-            echo "$RESOURCES" | while read -r resource; do
-              echo "• $resource"
-            done
-            RESOURCE_COUNT=$(echo "$RESOURCES" | wc -l)
-            echo "📊 Total resources in state: ${RESOURCE_COUNT}"
+          STATE_OUTPUT=$(terraform show)
+          if [[ "$STATE_OUTPUT" == *"No state."* ]]; then
+            echo "⚠️  No state found or empty state file"
+            echo "Please verify that:"
+            echo "  1. The backend configuration is correct"
+            echo "  2. The state file exists in the specified location"
+            echo "  3. You have the necessary permissions"
+            exit 1
           else
-            echo "No resources found in state file"
+            echo "$STATE_OUTPUT"
+            
+            echo -e "\n📑 Resources in state:"
+            terraform state list || echo "No resources found in state"
           fi
         else
-          echo "❌ Failed to load state file or state file not found"
-          echo "Please verify your backend configuration"
+          echo "❌ Failed to access state file"
+          echo "Please verify your backend configuration and permissions"
           exit 1
         fi
         
-        echo "⏳ Waiting for 30 seconds before proceeding with destroy..."
+        echo -e "\n⚠️  Are you sure you want to proceed with destroy?"
+        echo "⏳ Waiting for 30 seconds before proceeding..."
         echo "   Press Ctrl+C to cancel if this is not the correct state file"
         sleep 30
       id: validate

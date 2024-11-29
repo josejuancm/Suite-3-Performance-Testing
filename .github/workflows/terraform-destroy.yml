@@ -142,6 +142,21 @@ jobs:
         location="${{ inputs.location }}"
         prefix="${{ inputs.prefix }}"
         label="${{ inputs.label }}"
+        web_vm_size="${{ vars.WEB_VM_SIZE }}"
+        runner_vm_size="${{ vars.RUNNER_VM_SIZE }}"
+        web_vm_image_publisher="${{ vars.WEB_VM_IMAGE_PUBLISHER }}"
+        web_vm_image_offer="${{ vars.WEB_VM_IMAGE_OFFER }}"
+        web_vm_image_sku="${{ vars.WEB_VM_IMAGE_SKU }}"
+        sql_vm_size="${{ vars.SQL_VM_SIZE }}"
+        sql_vm_image_publisher="${{ vars.SQL_VM_IMAGE_PUBLISHER }}"
+        sql_vm_image_offer="${{ vars.SQL_VM_IMAGE_OFFER }}"
+        sql_vm_image_sku="${{ vars.SQL_VM_IMAGE_SKU }}"
+        web_admin_username="${{ secrets.WEB_ADMIN_USERNAME }}"
+        web_admin_password="${{ secrets.WEB_ADMIN_PASSWORD }}"
+        runner_admin_username="${{ secrets.RUNNER_ADMIN_USERNAME }}"
+        runner_admin_password="${{ secrets.RUNNER_ADMIN_PASSWORD }}"
+        sql_admin_username="${{ secrets.SQL_ADMIN_USERNAME }}"
+        sql_admin_password="${{ secrets.SQL_ADMIN_PASSWORD }}"
         EOF
       working-directory: ./eng/terraform
 

@@ -3,6 +3,10 @@ name: 'Terraform Destroy'
 on:
   workflow_dispatch:
     inputs:
+      location:
+        description: 'Azure Region'
+        required: true
+        default: 'westus'
       prefix:
         description: 'Resource Prefix'
         required: true
@@ -132,10 +136,20 @@ jobs:
         sleep 30
       working-directory: ./eng/terraform
 
+    - name: Create terraform.tfvars
+      run: |
+        cat > terraform.tfvars << EOF
+        location="${{ inputs.location }}"
+        prefix="${{ inputs.prefix }}"
+        label="${{ inputs.label }}"
+        EOF
+      working-directory: ./eng/terraform
+
     - name: Terraform Destroy
-      run: terraform destroy -auto-approve
+      run: terraform destroy -auto-approve -var-file=terraform.tfvars
       id: destroy
       continue-on-error: true
+      working-directory: ./eng/terraform
 
     - name: Terraform Destroy Status
       if: steps.destroy.outcome == 'failure'
@@ -143,3 +157,4 @@ jobs:
         echo "Terraform destroy failed. Checking state..."
         terraform show
         exit 1
+      working-directory: ./eng/terraform

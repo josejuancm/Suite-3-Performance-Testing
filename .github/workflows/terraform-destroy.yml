@@ -15,7 +15,7 @@ on:
         description: 'Environment to destroy'
         required: true
         type: environment
-        default: 'development'
+        default: 'develop'
 
 permissions:
   contents: read
@@ -30,6 +30,7 @@ jobs:
   terraform:
     name: 'Terraform'
     runs-on: ubuntu-latest
+    environment: develop
 
     defaults:
       run:

@@ -46,8 +46,37 @@ jobs:
       run: terraform init -backend-config="resource_group_name=${{ inputs.resource_group_name }}" -backend-config="storage_account_name=${{ inputs.storage_account_name }}" -backend-config="container_name=${{ inputs.container_name }}" -backend-config="key=${{ inputs.state_key }}"
       id: init
 
+    - name: Validate State File
+      run: |
+        echo "🔍 Validating state file details:"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "Resource Group: ${{ inputs.resource_group_name }}"
+        echo "Storage Account: ${{ inputs.storage_account_name }}"
+        echo "Container: ${{ inputs.container_name }}"
+        echo "State Key: ${{ inputs.state_key }}"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        
+        if terraform show > /dev/null 2>&1; then
+          echo "✅ State file successfully loaded!"
+          echo "📋 Current state contents:"
+          terraform show -json | jq -r '.values.root_module.resources[] | "• \(.address) (\(.type))"' || echo "No resources found in state"
+          
+          # Count resources
+          RESOURCE_COUNT=$(terraform show -json | jq -r '.values.root_module.resources | length')
+          echo "📊 Total resources in state: ${RESOURCE_COUNT}"
+        else
+          echo "❌ Failed to load state file or state file not found"
+          echo "Please verify your backend configuration"
+          exit 1
+        fi
+        
+        echo "⏳ Waiting for 30 seconds before proceeding with destroy..."
+        echo "   Press Ctrl+C to cancel if this is not the correct state file"
+        sleep 30
+      id: validate
+
     - name: Terraform Destroy
-      run: terraform destroy -auto-approve -input=false -no-color -var="prefix=${{ vars.TF_VAR_PREFIX }}" -var="label=${{ vars.TF_VAR_LABEL }}" -var="web_admin_username=${{ vars.TF_VAR_WEB_ADMIN_USERNAME }}" -var="web_admin_password=${{ secrets.TF_VAR_WEB_ADMIN_PASSWORD }}" -var="runner_admin_username=${{ vars.TF_VAR_RUNNER_ADMIN_USERNAME }}" -var="runner_admin_password=${{ secrets.TF_VAR_RUNNER_ADMIN_PASSWORD }}" -var="sql_admin_username=${{ vars.TF_VAR_SQL_ADMIN_USERNAME }}" -var="sql_admin_password=${{ secrets.TF_VAR_SQL_ADMIN_PASSWORD }}"
+      run: terraform destroy -auto-approve
       id: destroy
       continue-on-error: true
 

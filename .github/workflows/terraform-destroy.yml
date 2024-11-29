@@ -47,31 +47,31 @@ jobs:
 
     - name: Validate State File
       env:
-        AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
-        AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-        AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-        AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+        ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+        ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
       run: |
         # Debug: Check if environment variables are set (masking sensitive values)
         echo "🔍 Checking environment variables..."
-        echo "Client ID exists: $([[ -n "$AZURE_CLIENT_ID" ]] && echo 'Yes' || echo 'No')"
-        echo "Client Secret exists: $([[ -n "$AZURE_CLIENT_SECRET" ]] && echo 'Yes' || echo 'No')"
-        echo "Subscription ID exists: $([[ -n "$AZURE_SUBSCRIPTION_ID" ]] && echo 'Yes' || echo 'No')"
-        echo "Tenant ID exists: $([[ -n "$AZURE_TENANT_ID" ]] && echo 'Yes' || echo 'No')"
+        echo "Client ID exists: $([[ -n "$ARM_CLIENT_ID" ]] && echo 'Yes' || echo 'No')"
+        echo "Client Secret exists: $([[ -n "$ARM_CLIENT_SECRET" ]] && echo 'Yes' || echo 'No')"
+        echo "Subscription ID exists: $([[ -n "$ARM_SUBSCRIPTION_ID" ]] && echo 'Yes' || echo 'No')"
+        echo "Tenant ID exists: $([[ -n "$ARM_TENANT_ID" ]] && echo 'Yes' || echo 'No')"
         
-        if [[ -z "$AZURE_TENANT_ID" ]] || [[ -z "$AZURE_CLIENT_ID" ]] || [[ -z "$AZURE_CLIENT_SECRET" ]] || [[ -z "$AZURE_SUBSCRIPTION_ID" ]]; then
+        if [[ -z "$ARM_TENANT_ID" ]] || [[ -z "$ARM_CLIENT_ID" ]] || [[ -z "$ARM_CLIENT_SECRET" ]] || [[ -z "$ARM_SUBSCRIPTION_ID" ]]; then
           echo "❌ One or more required Azure credentials are missing"
           exit 1
         fi
         
-        # Login to Azure CLI
+        # Login to Azure CLI using ARM_ variables
         echo "🔐 Authenticating with Azure..."
         az login --service-principal \
-          --username "$AZURE_CLIENT_ID" \
-          --password "$AZURE_CLIENT_SECRET" \
-          --tenant "$AZURE_TENANT_ID"
+          --username "$ARM_CLIENT_ID" \
+          --password "$ARM_CLIENT_SECRET" \
+          --tenant "$ARM_TENANT_ID"
         
-        az account set --subscription "$AZURE_SUBSCRIPTION_ID"
+        az account set --subscription "$ARM_SUBSCRIPTION_ID"
         
         # Calculate the same state file name as used in deploy
         STATE_FILE="${{ inputs.prefix }}-${{ inputs.label }}.tfstate"

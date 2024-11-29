@@ -34,7 +34,7 @@ jobs:
   terraform:
     name: 'Terraform'
     runs-on: ubuntu-latest
-    environment: develop
+    environment: ${{ github.event.inputs.environment }}
 
     defaults:
       run:
@@ -94,16 +94,18 @@ jobs:
         
         # List available storage accounts in the resource group
         echo "📦 Available storage accounts in resource group:"
-        az storage account list --resource-group ${RESOURCE_GROUP} --query "[].name" -o tsv || {
+        STORAGE_ACCOUNTS=$(az storage account list --resource-group ${RESOURCE_GROUP} --query "[].name" -o tsv) || {
           echo "❌ Failed to list storage accounts. Make sure the resource group exists."
           exit 1
         }
         
-        # Get the storage account name
-        STORAGE_ACCOUNT=$(az storage account list --resource-group ${RESOURCE_GROUP} --query "[0].name" -o tsv)
+        # Find storage account with 'tfstate' in the name
+        STORAGE_ACCOUNT=$(echo "$STORAGE_ACCOUNTS" | grep 'tfstate' || echo "")
         
         if [ -z "$STORAGE_ACCOUNT" ]; then
-          echo "❌ No storage account found in resource group ${RESOURCE_GROUP}"
+          echo "❌ No tfstate storage account found in resource group ${RESOURCE_GROUP}"
+          echo "Available storage accounts:"
+          echo "$STORAGE_ACCOUNTS"
           exit 1
         fi
         
@@ -129,41 +131,38 @@ jobs:
           echo "Please verify your backend configuration and permissions"
           exit 1
         fi
-        
-        echo -e "\n⚠️  Are you sure you want to proceed with destroy?"
-        echo "⏳ Waiting for 30 seconds before proceeding..."
-        echo "   Press Ctrl+C to cancel if this is not the correct state file"
-        sleep 30
-      working-directory: ./eng/terraform
-
-    - name: Create terraform.tfvars
-      run: |
-        cat > terraform.tfvars << EOF
-        location="${{ inputs.location }}"
-        prefix="${{ inputs.prefix }}"
-        label="${{ inputs.label }}"
-        web_vm_size="${{ vars.WEB_VM_SIZE }}"
-        runner_vm_size="${{ vars.RUNNER_VM_SIZE }}"
-        web_vm_image_publisher="${{ vars.WEB_VM_IMAGE_PUBLISHER }}"
-        web_vm_image_offer="${{ vars.WEB_VM_IMAGE_OFFER }}"
-        web_vm_image_sku="${{ vars.WEB_VM_IMAGE_SKU }}"
-        sql_vm_size="${{ vars.SQL_VM_SIZE }}"
-        sql_vm_image_publisher="${{ vars.SQL_VM_IMAGE_PUBLISHER }}"
-        sql_vm_image_offer="${{ vars.SQL_VM_IMAGE_OFFER }}"
-        sql_vm_image_sku="${{ vars.SQL_VM_IMAGE_SKU }}"
-        web_admin_username="${{ secrets.WEB_ADMIN_USERNAME }}"
-        web_admin_password="${{ secrets.WEB_ADMIN_PASSWORD }}"
-        runner_admin_username="${{ secrets.RUNNER_ADMIN_USERNAME }}"
-        runner_admin_password="${{ secrets.RUNNER_ADMIN_PASSWORD }}"
-        sql_admin_username="${{ secrets.SQL_ADMIN_USERNAME }}"
-        sql_admin_password="${{ secrets.SQL_ADMIN_PASSWORD }}"
-        EOF
-      working-directory: ./eng/terraform
 
     - name: Terraform Destroy
-      run: terraform destroy -auto-approve -var-file=terraform.tfvars
+      run: |
+        # First try to remove the VM extension
+        echo "Attempting to remove VM extension..."
+        terraform state rm module.runner_config.azurerm_virtual_machine_extension.script_install || true
+        
+        # Now attempt the destroy
+        terraform destroy -auto-approve -var-file=terraform.tfvars -parallelism=1
       id: destroy
       continue-on-error: true
+      working-directory: ./eng/terraform
+
+    - name: Handle Destroy Failure
+      if: steps.destroy.outcome == 'failure'
+      run: |
+        echo "Terraform destroy failed. Attempting recovery..."
+        
+        # List current state
+        echo "Current state resources:"
+        terraform state list || true
+        
+        # Try to remove problematic resources from state
+        echo "Attempting to remove problematic resources from state..."
+        terraform state list | grep "azurerm_virtual_machine_extension" | while read resource; do
+          echo "Removing $resource from state..."
+          terraform state rm "$resource" || true
+        done
+        
+        # Try destroy again
+        echo "Attempting destroy again..."
+        terraform destroy -auto-approve -var-file=terraform.tfvars -parallelism=1
       working-directory: ./eng/terraform
 
     - name: Terraform Destroy Status

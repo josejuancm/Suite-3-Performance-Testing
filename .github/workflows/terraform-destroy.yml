@@ -59,11 +59,25 @@ jobs:
         if terraform show > /dev/null 2>&1; then
           echo "✅ State file successfully loaded!"
           echo "📋 Current state contents:"
-          terraform show -json | jq -r '.values.root_module.resources[] | "• \(.address) (\(.type))"' || echo "No resources found in state"
           
-          # Count resources
-          RESOURCE_COUNT=$(terraform show -json | jq -r '.values.root_module.resources | length')
-          echo "📊 Total resources in state: ${RESOURCE_COUNT}"
+          # Save state to a file first
+          terraform show -json > tf_state.json
+          
+          if [ -s tf_state.json ]; then
+            # Check if there are any resources
+            RESOURCE_COUNT=$(jq -r '.values.root_module.resources | length // 0' tf_state.json)
+            
+            if [ "$RESOURCE_COUNT" -gt 0 ]; then
+              jq -r '.values.root_module.resources[] | "• \(.address) (\(.type))"' tf_state.json
+              echo "📊 Total resources in state: ${RESOURCE_COUNT}"
+            else
+              echo "No resources found in state file"
+            fi
+          else
+            echo "State file is empty or invalid"
+          fi
+          
+          rm -f tf_state.json
         else
           echo "❌ Failed to load state file or state file not found"
           echo "Please verify your backend configuration"

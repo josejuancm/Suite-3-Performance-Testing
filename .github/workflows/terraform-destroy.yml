@@ -42,38 +42,27 @@ jobs:
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
 
-    - name: Terraform Init
-      run: terraform init -backend-config="resource_group_name=${{ inputs.prefix }}-${{ inputs.label }}" -backend-config="storage_account_name=${{ steps.storage.outputs.storage_account }}" -backend-config="container_name=tfstate" -backend-config="key=${{ inputs.prefix }}-${{ inputs.label }}.tfstate"
-      id: init
+    - name: Create backend.tf
+      run: |
+        # Calculate the same state file name as used in deploy
+        STATE_FILE="${{ inputs.prefix }}-${{ inputs.label }}.tfstate"
+        RESOURCE_GROUP="${{ inputs.prefix }}-${{ inputs.label }}"
+        
+        # Get the storage account name
+        STORAGE_ACCOUNT=$(az storage account list --resource-group ${RESOURCE_GROUP} --query "[0].name" -o tsv)
+        
+        # Create the backend configuration
+        cat > backend.tf << EOF
+        terraform {
+          backend "azurerm" {}
+        }
+        EOF
+        
+        echo "Created backend.tf for Azure storage"
+      working-directory: ./eng/terraform
 
     - name: Validate State File
-      env:
-        ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
-        ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-        ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-        ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
       run: |
-        # Debug: Check if environment variables are set (masking sensitive values)
-        echo "🔍 Checking environment variables..."
-        echo "Client ID exists: $([[ -n "$ARM_CLIENT_ID" ]] && echo 'Yes' || echo 'No')"
-        echo "Client Secret exists: $([[ -n "$ARM_CLIENT_SECRET" ]] && echo 'Yes' || echo 'No')"
-        echo "Subscription ID exists: $([[ -n "$ARM_SUBSCRIPTION_ID" ]] && echo 'Yes' || echo 'No')"
-        echo "Tenant ID exists: $([[ -n "$ARM_TENANT_ID" ]] && echo 'Yes' || echo 'No')"
-        
-        if [[ -z "$ARM_TENANT_ID" ]] || [[ -z "$ARM_CLIENT_ID" ]] || [[ -z "$ARM_CLIENT_SECRET" ]] || [[ -z "$ARM_SUBSCRIPTION_ID" ]]; then
-          echo "❌ One or more required Azure credentials are missing"
-          exit 1
-        fi
-        
-        # Login to Azure CLI using ARM_ variables
-        echo "🔐 Authenticating with Azure..."
-        az login --service-principal \
-          --username "$ARM_CLIENT_ID" \
-          --password "$ARM_CLIENT_SECRET" \
-          --tenant "$ARM_TENANT_ID"
-        
-        az account set --subscription "$ARM_SUBSCRIPTION_ID"
-        
         # Calculate the same state file name as used in deploy
         STATE_FILE="${{ inputs.prefix }}-${{ inputs.label }}.tfstate"
         RESOURCE_GROUP="${{ inputs.prefix }}-${{ inputs.label }}"
@@ -87,9 +76,12 @@ jobs:
         
         # List available storage accounts in the resource group
         echo "📦 Available storage accounts in resource group:"
-        az storage account list --resource-group ${RESOURCE_GROUP} --query "[].name" -o tsv
+        az storage account list --resource-group ${RESOURCE_GROUP} --query "[].name" -o tsv || {
+          echo "❌ Failed to list storage accounts. Make sure the resource group exists."
+          exit 1
+        }
         
-        # Get the storage account name (should match the pattern used in deploy)
+        # Get the storage account name
         STORAGE_ACCOUNT=$(az storage account list --resource-group ${RESOURCE_GROUP} --query "[0].name" -o tsv)
         
         if [ -z "$STORAGE_ACCOUNT" ]; then
@@ -106,32 +98,14 @@ jobs:
           -backend-config="container_name=tfstate" \
           -backend-config="key=${STATE_FILE}"
         
-        # Check if we can access the backend
-        echo "🔄 Verifying backend access..."
-        terraform init -backend=true -backend-config="resource_group_name=${{ inputs.prefix }}-${{ inputs.label }}" \
-          -backend-config="storage_account_name=${{ steps.storage.outputs.storage_account }}" \
-          -backend-config="container_name=tfstate" \
-          -backend-config="key=${{ inputs.prefix }}-${{ inputs.label }}.tfstate" -reconfigure
-        
         # Try to show state
         if terraform show > /dev/null 2>&1; then
           echo "✅ State file accessed successfully!"
           echo "📋 Current state contents:"
+          terraform show
           
-          STATE_OUTPUT=$(terraform show)
-          if [[ "$STATE_OUTPUT" == *"No state."* ]]; then
-            echo "⚠️  No state found or empty state file"
-            echo "Please verify that:"
-            echo "  1. The backend configuration is correct"
-            echo "  2. The state file exists in the specified location"
-            echo "  3. You have the necessary permissions"
-            exit 1
-          else
-            echo "$STATE_OUTPUT"
-            
-            echo -e "\n📑 Resources in state:"
-            terraform state list || echo "No resources found in state"
-          fi
+          echo -e "\n📑 Resources in state:"
+          terraform state list || echo "No resources found in state"
         else
           echo "❌ Failed to access state file"
           echo "Please verify your backend configuration and permissions"
@@ -142,7 +116,16 @@ jobs:
         echo "⏳ Waiting for 30 seconds before proceeding..."
         echo "   Press Ctrl+C to cancel if this is not the correct state file"
         sleep 30
-      id: validate
+      working-directory: ./eng/terraform
+
+    - name: Azure Login
+      run: |
+        az login --service-principal \
+          --username "$ARM_CLIENT_ID" \
+          --password "$ARM_CLIENT_SECRET" \
+          --tenant "$ARM_TENANT_ID"
+        az account set --subscription "$ARM_SUBSCRIPTION_ID"
+      working-directory: ./eng/terraform
 
     - name: Terraform Destroy
       run: terraform destroy -auto-approve

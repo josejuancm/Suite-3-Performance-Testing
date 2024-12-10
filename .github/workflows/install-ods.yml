@@ -20,10 +20,11 @@ on:
         description: "The PowerShell command(s) to run on the VM"
         required: true
         default: |
-          $desktopPath = [Environment]::GetFolderPath('Desktop')
-          $filePath = Join-Path -Path $desktopPath -ChildPath 'test.txt'
-          Set-Content -Path $filePath -Value 'This is a test file'
-          Write-Host "File created at: $filePath"
+          Write-Host "Starting script"
+          $desktop = [Environment]::GetFolderPath("Desktop")
+          Write-Host "Desktop path: $desktop"
+          New-Item -Path "$desktop\test.txt" -ItemType File -Value "This is a test file" -Force
+          Write-Host "File creation completed"
 
 env:
   ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}

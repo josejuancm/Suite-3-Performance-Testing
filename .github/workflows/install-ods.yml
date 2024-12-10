@@ -20,14 +20,14 @@ on:
         description: "The PowerShell command(s) to run on the VM"
         required: true
         default: |
-          try { `
-            Write-Host 'Starting script'; `
-            $desktop = [System.Environment]::GetFolderPath('Desktop'); `
-            Write-Host ('Desktop path: ' + $desktop); `
-            New-Item -Path ($desktop + '\\test.txt') -ItemType File -Value 'This is a test file' -Force; `
-            Write-Host 'File creation completed' `
-          } catch { `
-            Write-Host ('Error: ' + $_.Exception.Message) `
+          try { \
+            Write-Host 'Starting script'; \
+            $desktop = [System.Environment]::GetFolderPath('Desktop'); \
+            Write-Host ('Desktop path: ' + $desktop); \
+            New-Item -Path ($desktop + '\\test.txt') -ItemType File -Value 'This is a test file' -Force; \
+            Write-Host 'File creation completed' \
+          } catch { \
+            Write-Host ('Error: ' + $_.Exception.Message) \
           }
 
 env:

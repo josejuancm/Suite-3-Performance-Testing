@@ -19,7 +19,11 @@ on:
       command_script:
         description: "The PowerShell command(s) to run on the VM"
         required: true
-        default: "Write-Host 'Hello from the VM!'"
+        default: |
+          $desktopPath = [Environment]::GetFolderPath('Desktop')
+          $filePath = Join-Path $desktopPath 'test.txt'
+          Set-Content -Path $filePath -Value 'This is a test file'
+          Write-Host "File created at: $filePath"
 
 env:
   ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}

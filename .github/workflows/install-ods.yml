@@ -21,7 +21,7 @@ on:
         required: true
         default: |
           $desktopPath = [Environment]::GetFolderPath('Desktop')
-          $filePath = Join-Path $desktopPath 'test.txt'
+          $filePath = Join-Path -Path $desktopPath -ChildPath 'test.txt'
           Set-Content -Path $filePath -Value 'This is a test file'
           Write-Host "File created at: $filePath"
 

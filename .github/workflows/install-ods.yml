@@ -39,4 +39,4 @@ jobs:
             --command-id RunPowerShellScript \
             --name "${{ github.event.inputs.vm_name }}" \
             --resource-group "${{ github.event.inputs.resource_group }}" \
-            --scripts 'Invoke-WebRequest -Uri "https://pkgs.dev.azure.com/ed-fi-alliance/Ed-Fi-Alliance-OSS/_apis/packaging/feeds/EdFi@Release/nuget/packages/EdFi.Suite3.Installer.WebApi/versions/7.2.4/content" -OutFile "C:/Temp/EdFi.Suite3.Installer.WebApi.7.2.4.nupkg"; Rename-Item -Path "C:/Temp/EdFi.Suite3.Installer.WebApi.7.2.4.nupkg" -NewName "EdFi.Suite3.Installer.WebApi.7.2.4.zip"'
+            --scripts 'Invoke-WebRequest -Uri "https://pkgs.dev.azure.com/ed-fi-alliance/Ed-Fi-Alliance-OSS/_apis/packaging/feeds/EdFi@Release/nuget/packages/EdFi.Suite3.Installer.WebApi/versions/7.2.4/content" -OutFile "C:/Temp/EdFi.Suite3.Installer.WebApi.7.2.4.nupkg"; Rename-Item -Path "C:/Temp/EdFi.Suite3.Installer.WebApi.7.2.4.nupkg" -NewName "EdFi.Suite3.Installer.WebApi.zip"'

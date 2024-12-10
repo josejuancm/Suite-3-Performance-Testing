@@ -8,8 +8,7 @@ on:
         required: true
         type: choice
         options:
-          - staging
-          - production
+          - develop
         default: staging
       vm_name:
         description: "The name of the VM to run the command on"

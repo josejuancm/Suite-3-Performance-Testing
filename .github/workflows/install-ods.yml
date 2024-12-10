@@ -16,6 +16,10 @@ on:
       resource_group:
         description: "The resource group of the VM"
         required: true
+      version:
+        description: "The version of EdFi.Suite3.Installer.WebApi to install"
+        required: true
+        default: "7.2.4"
 
 env:
   ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
@@ -39,4 +43,4 @@ jobs:
             --command-id RunPowerShellScript \
             --name "${{ github.event.inputs.vm_name }}" \
             --resource-group "${{ github.event.inputs.resource_group }}" \
-            --scripts 'Invoke-WebRequest -Uri "https://pkgs.dev.azure.com/ed-fi-alliance/Ed-Fi-Alliance-OSS/_apis/packaging/feeds/EdFi@Release/nuget/packages/EdFi.Suite3.Installer.WebApi/versions/7.2.4/content" -OutFile "C:/Temp/EdFi.Suite3.Installer.WebApi.7.2.4.nupkg"; Rename-Item -Path "C:/Temp/EdFi.Suite3.Installer.WebApi.7.2.4.nupkg" -NewName "EdFi.Suite3.Installer.WebApi.zip"'
+            --scripts 'Invoke-WebRequest -Uri "https://pkgs.dev.azure.com/ed-fi-alliance/Ed-Fi-Alliance-OSS/_apis/packaging/feeds/EdFi@Release/nuget/packages/EdFi.Suite3.Installer.WebApi/versions/${{ github.event.inputs.version }}/content" -OutFile "C:/Temp/EdFi.Suite3.Installer.WebApi.${{ github.event.inputs.version }}.nupkg"; Rename-Item -Path "C:/Temp/EdFi.Suite3.Installer.WebApi.${{ github.event.inputs.version }}.nupkg" -NewName "EdFi.Suite3.Installer.WebApi.zip"'

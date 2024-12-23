@@ -45,45 +45,32 @@ jobs:
             --resource-group "${{ github.event.inputs.resource_group }}" \
             --scripts '
             # Download and extract WebApi Installer
-            Invoke-WebRequest -Uri "https://pkgs.dev.azure.com/ed-fi-alliance/Ed-Fi-Alliance-OSS/_apis/packaging/feeds/EdFi@Release/nuget/packages/EdFi.Suite3.Installer.WebApi/versions/${{ github.event.inputs.version }}/content" -OutFile "C:/Temp/EdFi.Suite3.Installer.WebApi.${{ github.event.inputs.version }}.nupkg"; 
-            Rename-Item -Path "C:/Temp/EdFi.Suite3.Installer.WebApi.${{ github.event.inputs.version }}.nupkg" -NewName "EdFi.Suite3.Installer.WebApi.zip";
-            Expand-Archive -Path "C:/Temp/EdFi.Suite3.Installer.WebApi.zip" -DestinationPath "C:/Temp/EdFi.Suite3.Installer.WebApi" -Force;
+            Invoke-WebRequest -Uri "https://pkgs.dev.azure.com/ed-fi-alliance/Ed-Fi-Alliance-OSS/_apis/packaging/feeds/EdFi@Release/nuget/packages/EdFi.Suite3.Installer.WebApi/versions/${{ github.event.inputs.version }}/content" -OutFile "C:/Temp/EdFi.Suite3.Installer.WebApi.${{ github.event.inputs.version }}.nupkg"
+            Rename-Item -Path "C:/Temp/EdFi.Suite3.Installer.WebApi.${{ github.event.inputs.version }}.nupkg" -NewName "EdFi.Suite3.Installer.WebApi.zip"
+            Expand-Archive -Path "C:/Temp/EdFi.Suite3.Installer.WebApi.zip" -DestinationPath "C:/Temp/EdFi.Suite3.Installer.WebApi" -Force
 
             # Download and extract RestApi Databases
-            Invoke-WebRequest -Uri "https://pkgs.dev.azure.com/ed-fi-alliance/Ed-Fi-Alliance-OSS/_apis/packaging/feeds/EdFi@Release/nuget/packages/EdFi.Suite3.RestApi.Databases.Standard.5.1.0/versions/7.2.1201/content" -OutFile "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard.5.1.0.nupkg";
-            Rename-Item -Path "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard.5.1.0.nupkg" -NewName "EdFi.Suite3.RestApi.Databases.Standard.zip";
-            Expand-Archive -Path "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard.zip" -DestinationPath "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard" -Force;
-            Remove-Item -Path "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard/configuration.postgreSQL.json" -Force;
+            Invoke-WebRequest -Uri "https://pkgs.dev.azure.com/ed-fi-alliance/Ed-Fi-Alliance-OSS/_apis/packaging/feeds/EdFi@Release/nuget/packages/EdFi.Suite3.RestApi.Databases.Standard.5.1.0/versions/7.2.1201/content" -OutFile "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard.5.1.0.nupkg"
+            Rename-Item -Path "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard.5.1.0.nupkg" -NewName "EdFi.Suite3.RestApi.Databases.Standard.zip"
+            Expand-Archive -Path "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard.zip" -DestinationPath "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard" -Force
+            Remove-Item -Path "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard/configuration.postgreSQL.json" -Force
 
             # Download and extract SwaggerUI
-            Invoke-WebRequest -Uri "https://pkgs.dev.azure.com/ed-fi-alliance/Ed-Fi-Alliance-OSS/_apis/packaging/feeds/EdFi@Release/nuget/packages/EdFi.Suite3.Installer.SwaggerUI/versions/7.2.6/content" -OutFile "C:/Temp/EdFi.Suite3.Installer.SwaggerUI.nupkg";
-            Rename-Item -Path "C:/Temp/EdFi.Suite3.Installer.SwaggerUI.nupkg" -NewName "EdFi.Suite3.Installer.SwaggerUI.zip";
-            Expand-Archive -Path "C:/Temp/EdFi.Suite3.Installer.SwaggerUI.zip" -DestinationPath "C:/Temp/EdFi.Suite3.Installer.SwaggerUI" -Force;
+            Invoke-WebRequest -Uri "https://pkgs.dev.azure.com/ed-fi-alliance/Ed-Fi-Alliance-OSS/_apis/packaging/feeds/EdFi@Release/nuget/packages/EdFi.Suite3.Installer.SwaggerUI/versions/7.2.6/content" -OutFile "C:/Temp/EdFi.Suite3.Installer.SwaggerUI.nupkg"
+            Rename-Item -Path "C:/Temp/EdFi.Suite3.Installer.SwaggerUI.nupkg" -NewName "EdFi.Suite3.Installer.SwaggerUI.zip"
+            Expand-Archive -Path "C:/Temp/EdFi.Suite3.Installer.SwaggerUI.zip" -DestinationPath "C:/Temp/EdFi.Suite3.Installer.SwaggerUI" -Force
 
             # Download and extract SandboxAdmin
-            Invoke-WebRequest -Uri "https://pkgs.dev.azure.com/ed-fi-alliance/Ed-Fi-Alliance-OSS/_apis/packaging/feeds/EdFi@Release/nuget/packages/EdFi.Suite3.Installer.SandboxAdmin/versions/7.2.7/content" -OutFile "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.nupkg";
-            Rename-Item -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.nupkg" -NewName "EdFi.Suite3.Installer.SandboxAdmin.zip";
-            Expand-Archive -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.zip" -DestinationPath "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin" -Force;
+            Invoke-WebRequest -Uri "https://pkgs.dev.azure.com/ed-fi-alliance/Ed-Fi-Alliance-OSS/_apis/packaging/feeds/EdFi@Release/nuget/packages/EdFi.Suite3.Installer.SandboxAdmin/versions/7.2.7/content" -OutFile "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.nupkg"
+            Rename-Item -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.nupkg" -NewName "EdFi.Suite3.Installer.SandboxAdmin.zip"
+            Expand-Archive -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.zip" -DestinationPath "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin" -Force
 
-            # Create and run a PowerShell script
+            # Create and run PowerShell script for database initialization
             $scriptContent = @"
-            Write-Host "Starting database deployment..."
             Set-Location "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard"
             Import-Module ./Deployment.psm1
-            Initialize-DeploymentEnvironment
-            Write-Host "Deployment completed"
-            "@
+            Initialize-DeploymentEnvironment"@
 
-            # Save the script
+            # Save and run script
             $scriptContent | Out-File "C:/Temp/deploy-edfi.ps1"
-
-            # Run the script with elevated privileges
-            $process = Start-Process powershell.exe -ArgumentList "-ExecutionPolicy Bypass -File C:/Temp/deploy-edfi.ps1" -Verb RunAs -PassThru -Wait
-
-            # Check the exit code
-            Write-Host "Script completed with exit code: $($process.ExitCode)"
-
-            # Check for databases
-            Write-Host "Checking databases..."
-            $query = "SELECT name FROM sys.databases WHERE name LIKE ''EdFi%''"
-            Invoke-Sqlcmd -Query $query -ServerInstance "(local)" | ForEach-Object { Write-Host $_.name }' 
+            Start-Process powershell.exe -ArgumentList "-ExecutionPolicy Bypass -File C:/Temp/deploy-edfi.ps1" -Verb RunAs -Wait'

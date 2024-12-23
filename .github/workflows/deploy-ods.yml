@@ -41,38 +41,12 @@ jobs:
             --resource-group "${{ github.event.inputs.resource_group }}" \
             --scripts '
             $ErrorActionPreference = "Continue"
+            $VerbosePreference = "Continue"
             
             cd "C:\Temp\EdFi.Suite3.RestApi.Databases.Standard"
+            Write-Host "Starting deployment at $(Get-Date)"
             
-            Write-Host "Current location: $(Get-Location)"
-            Write-Host "Checking EdFi.Db.Deploy tool..."
-            if (Test-Path ".\tools\EdFi.Db.Deploy.exe") {
-                Write-Host "EdFi.Db.Deploy.exe exists"
-                $toolVersion = (Get-Item ".\tools\EdFi.Db.Deploy.exe").VersionInfo.FileVersion
-                Write-Host "Tool version: $toolVersion"
-            } else {
-                Write-Error "EdFi.Db.Deploy.exe not found!"
-                exit 1
-            }
+            Import-Module .\Deployment.psm1
+            Initialize-DeploymentEnvironment
             
-            Write-Host "Importing module..."
-            Import-Module .\Deployment.psm1 -Verbose
-            
-            Write-Host "Getting available commands..."
-            Get-Command -Module Deployment | Format-Table -AutoSize
-            
-            Write-Host "Starting deployment..."
-            try {
-                Initialize-DeploymentEnvironment -Verbose
-                Write-Host "Deployment completed successfully"
-            }
-            catch {
-                Write-Error "Deployment failed with error: $_"
-                Write-Error "Stack trace: $($_.ScriptStackTrace)"
-                Write-Host "Checking SQL Server status..."
-                $sqlService = Get-Service -Name MSSQLSERVER -ErrorAction SilentlyContinue
-                if ($sqlService) {
-                    Write-Host "SQL Server status: $($sqlService.Status)"
-                }
-                exit 1
-            }' 
+            Write-Host "Deployment completed at $(Get-Date)"' 

@@ -41,16 +41,31 @@ jobs:
             --resource-group "${{ github.event.inputs.resource_group }}" \
             --scripts '
             $ErrorActionPreference = "Continue"
+            $VerbosePreference = "Continue"
             
             try {
                 Set-Location "C:\Temp\EdFi.Suite3.RestApi.Databases.Standard"
-                Write-Host "Current location: $(Get-Location)"
+                
+                # Check SQL Server status
+                $sqlService = Get-Service MSSQLSERVER
+                Write-Host "SQL Server Status: $($sqlService.Status)"
+                
+                # Test SQL connectivity
+                $sqlcmd = "SELECT @@version"
+                $result = Invoke-Sqlcmd -Query $sqlcmd -ServerInstance "(local)" -ErrorAction Stop
+                Write-Host "SQL Server Version: $($result.Column1)"
+                
+                # Check EdFi.Db.Deploy
+                $deployTool = ".\tools\EdFi.Db.Deploy.exe"
+                Write-Host "Deploy tool exists: $(Test-Path $deployTool)"
+                Write-Host "Deploy tool version: $((Get-Item $deployTool).VersionInfo.FileVersion)"
                 
                 Write-Host "Importing module..."
                 Import-Module .\Deployment.psm1 -Verbose
                 
                 Write-Host "Starting deployment..."
-                Initialize-DeploymentEnvironment *>&1 | Tee-Object -FilePath "C:\Windows\Temp\deploy.log"
+                $env:PSModulePath = $env:PSModulePath + ";C:\Program Files\WindowsPowerShell\Modules"
+                Initialize-DeploymentEnvironment -Verbose *>&1 | Tee-Object -FilePath "C:\Windows\Temp\deploy.log"
                 
                 if ($LASTEXITCODE -ne 0) {
                     throw "Deployment failed with exit code: $LASTEXITCODE"
@@ -64,5 +79,10 @@ jobs:
                     Write-Host "=== Deployment Log ==="
                     Get-Content "C:\Windows\Temp\deploy.log"
                 }
+                
+                # Get SQL error log
+                Write-Host "=== SQL Server Error Log ==="
+                Get-Content "C:\Program Files\Microsoft SQL Server\MSSQL15.MSSQLSERVER\MSSQL\Log\ERRORLOG"
+                
                 exit 1
             }' 

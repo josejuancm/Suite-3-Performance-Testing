@@ -40,29 +40,29 @@ jobs:
             --name "${{ github.event.inputs.vm_name }}" \
             --resource-group "${{ github.event.inputs.resource_group }}" \
             --scripts '
-            $script = {
+            $ErrorActionPreference = "Continue"
+            
+            try {
                 Set-Location "C:\Temp\EdFi.Suite3.RestApi.Databases.Standard"
-                Import-Module .\Deployment.psm1
-                Initialize-DeploymentEnvironment
+                Write-Host "Current location: $(Get-Location)"
+                
+                Write-Host "Importing module..."
+                Import-Module .\Deployment.psm1 -Verbose
+                
+                Write-Host "Starting deployment..."
+                Initialize-DeploymentEnvironment *>&1 | Tee-Object -FilePath "C:\Windows\Temp\deploy.log"
+                
+                if ($LASTEXITCODE -ne 0) {
+                    throw "Deployment failed with exit code: $LASTEXITCODE"
+                }
+                
+                Write-Host "Deployment completed successfully"
             }
-            
-            # Create a new elevated PowerShell process and capture its output
-            $encodedCommand = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($script))
-            $output = Start-Process powershell -Verb RunAs -ArgumentList "-EncodedCommand $encodedCommand" -Wait -PassThru -RedirectStandardOutput "C:\Windows\Temp\deploy-output.txt" -RedirectStandardError "C:\Windows\Temp\deploy-error.txt"
-            
-            # Display the output
-            Write-Host "=== Standard Output ==="
-            if (Test-Path "C:\Windows\Temp\deploy-output.txt") {
-                Get-Content "C:\Windows\Temp\deploy-output.txt"
-            }
-            
-            Write-Host "=== Error Output ==="
-            if (Test-Path "C:\Windows\Temp\deploy-error.txt") {
-                Get-Content "C:\Windows\Temp\deploy-error.txt"
-            }
-            
-            # Check the exit code
-            if ($output.ExitCode -ne 0) {
-                Write-Error "Deployment failed with exit code: $($output.ExitCode)"
+            catch {
+                Write-Error "Error occurred: $_"
+                if (Test-Path "C:\Windows\Temp\deploy.log") {
+                    Write-Host "=== Deployment Log ==="
+                    Get-Content "C:\Windows\Temp\deploy.log"
+                }
                 exit 1
             }' 

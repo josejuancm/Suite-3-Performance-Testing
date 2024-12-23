@@ -65,5 +65,5 @@ jobs:
             Rename-Item -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.nupkg" -NewName "EdFi.Suite3.Installer.SandboxAdmin.zip"
             Expand-Archive -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.zip" -DestinationPath "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin" -Force
 
-            # Open PowerShell
-            cmd.exe /c start powershell.exe'
+            # Open PowerShell and create a file
+            cmd.exe /c start powershell.exe -Command "New-Item -Path C:\Temp\download-complete.txt -ItemType File -Force; exit"'

@@ -1,0 +1,50 @@
+name: Deploy ODS
+
+on:
+  workflow_dispatch:
+    inputs:
+      vm_name:
+        description: "The name of the VM to run the command on"
+        required: true
+      resource_group:
+        description: "The resource group of the VM"
+        required: true
+      target_environment:
+        description: "Select the environment"
+        required: true
+        type: choice
+        options:
+          - develop
+        default: staging
+
+env:
+  ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+  ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.target_environment }}
+    steps:
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: '{"clientId":"${{ env.ARM_CLIENT_ID }}","clientSecret":"${{ env.ARM_CLIENT_SECRET }}","subscriptionId":"${{ env.ARM_SUBSCRIPTION_ID }}","tenantId":"${{ env.ARM_TENANT_ID }}"}'
+
+      - name: Run Deployment Commands
+        run: |
+          az vm run-command invoke \
+            --command-id RunPowerShellScript \
+            --name "${{ github.event.inputs.vm_name }}" \
+            --resource-group "${{ github.event.inputs.resource_group }}" \
+            --scripts '
+            Write-Host "Changing to database directory..."
+            cd "C:\Temp\EdFi.Suite3.RestApi.Databases.Standard"
+            
+            Write-Host "Importing Deployment module..."
+            Import-Module .\Deployment.psm1 -Force -Verbose
+            
+            Write-Host "Initializing deployment environment..."
+            Initialize-DeploymentEnvironment -ErrorAction Stop' 

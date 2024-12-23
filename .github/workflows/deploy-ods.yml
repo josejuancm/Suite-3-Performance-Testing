@@ -40,9 +40,29 @@ jobs:
             --name "${{ github.event.inputs.vm_name }}" \
             --resource-group "${{ github.event.inputs.resource_group }}" \
             --scripts '
-            # Start a new elevated PowerShell session
-            Start-Process powershell -Verb RunAs -ArgumentList "-Command {
-                Set-Location ""C:\Temp\EdFi.Suite3.RestApi.Databases.Standard""
+            $script = {
+                Set-Location "C:\Temp\EdFi.Suite3.RestApi.Databases.Standard"
                 Import-Module .\Deployment.psm1
                 Initialize-DeploymentEnvironment
-            }" -Wait -WindowStyle Hidden' 
+            }
+            
+            # Create a new elevated PowerShell process and capture its output
+            $encodedCommand = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($script))
+            $output = Start-Process powershell -Verb RunAs -ArgumentList "-EncodedCommand $encodedCommand" -Wait -PassThru -RedirectStandardOutput "C:\Windows\Temp\deploy-output.txt" -RedirectStandardError "C:\Windows\Temp\deploy-error.txt"
+            
+            # Display the output
+            Write-Host "=== Standard Output ==="
+            if (Test-Path "C:\Windows\Temp\deploy-output.txt") {
+                Get-Content "C:\Windows\Temp\deploy-output.txt"
+            }
+            
+            Write-Host "=== Error Output ==="
+            if (Test-Path "C:\Windows\Temp\deploy-error.txt") {
+                Get-Content "C:\Windows\Temp\deploy-error.txt"
+            }
+            
+            # Check the exit code
+            if ($output.ExitCode -ne 0) {
+                Write-Error "Deployment failed with exit code: $($output.ExitCode)"
+                exit 1
+            }' 

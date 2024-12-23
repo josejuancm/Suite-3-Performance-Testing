@@ -65,5 +65,5 @@ jobs:
             Rename-Item -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.nupkg" -NewName "EdFi.Suite3.Installer.SandboxAdmin.zip"
             Expand-Archive -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.zip" -DestinationPath "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin" -Force
 
-            # Open PowerShell in a visible window
-            Start-Process powershell.exe -ArgumentList "-NoExit", "Set-Location C:/Temp"'
+            # Open PowerShell
+            cmd.exe /c start powershell.exe'

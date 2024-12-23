@@ -66,6 +66,51 @@ jobs:
             Expand-Archive -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.zip" -DestinationPath "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin" -Force
 
             # Change directory to WebApi Installer location and initialize deployment
-            Set-Location -Path "C:/Temp/EdFi.Suite3.Installer.WebApi/tools"
-            Import-Module ./Deployment.psm1
-            Initialize-DeploymentEnvironment'
+            $toolsPath = "C:\Temp\EdFi.Suite3.Installer.WebApi\tools"
+            $dbPath = "C:\Temp\EdFi.Suite3.RestApi.Databases.Standard"
+            
+            Write-Host "Verifying paths..."
+            Write-Host "Tools path: $toolsPath"
+            Write-Host "Database path: $dbPath"
+            
+            if (-not (Test-Path $dbPath)) {
+                Write-Error "Database path not found: $dbPath"
+                Write-Host "Contents of C:\Temp:"
+                Get-ChildItem "C:\Temp" -Force
+                exit 1
+            }
+            
+            Write-Host "Changing to WebApi tools directory..."
+            if (Test-Path $toolsPath) {
+                cd $toolsPath
+            } else {
+                Write-Error "Tools directory not found: $toolsPath"
+                Write-Host "Contents of C:\Temp:"
+                Get-ChildItem "C:\Temp" -Force
+                exit 1
+            }
+            
+            Write-Host "Current directory contents:"
+            Get-ChildItem | Format-Table Name, Length, LastWriteTime
+            
+            Write-Host "Importing Deployment module..."
+            $modulePath = Join-Path $toolsPath "Deployment.psm1"
+            if (Test-Path $modulePath) {
+                Write-Host "Found Deployment.psm1 module at: $modulePath"
+                Import-Module $modulePath -Force -Verbose
+            } else {
+                Write-Error "Cannot find Deployment.psm1 at: $modulePath"
+                Write-Host "Directory contents:"
+                Get-ChildItem -Force
+                exit 1
+            }
+            
+            Write-Host "Initializing deployment environment..."
+            try {
+                Initialize-DeploymentEnvironment -ErrorAction Stop
+            } catch {
+                Write-Error "Failed to initialize deployment environment: $_"
+                Write-Host "Error details: $($_.Exception.Message)"
+                Write-Host "Stack trace: $($_.ScriptStackTrace)"
+                exit 1
+            }'

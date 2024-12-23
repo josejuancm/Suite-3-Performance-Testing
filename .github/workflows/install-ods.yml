@@ -65,41 +65,9 @@ jobs:
             Rename-Item -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.nupkg" -NewName "EdFi.Suite3.Installer.SandboxAdmin.zip";
             Expand-Archive -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.zip" -DestinationPath "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin" -Force;
 
-            # Initialize RestApi Databases and Validate
-            Set-Location -Path "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard"
-            
-            Write-Output "Starting database deployment..."
-            
-            # Try running EdFi.Db.Deploy directly with detailed output
-            $deployOutput = & {
-                $deployPath = "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard/tools/EdFi.Db.Deploy.exe"
-                Write-Output "Checking deploy tool exists: $(Test-Path $deployPath)"
-                
-                & $deployPath Deploy `
-                    --engine SQLServer `
-                    --connectionString "server=(local);trusted_connection=True;database=EdFi_Admin;application name=EdFi.Ods.WebApi;TrustServerCertificate=True" `
-                    --database Admin `
-                    --filePaths "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard/Ed-Fi-ODS/Application/EdFi.Ods.Standard","C:/Temp/EdFi.Suite3.RestApi.Databases.Standard/Ed-Fi-ODS" `
-                    --standardVersion "5.1.0" `
-                    --extensionVersion "1.1.0" `
-                    --features "Changes" `
-                    -v
-            } 2>&1
-
-            Write-Output "Deploy tool output:"
-            Write-Output $deployOutput
-
-            # Verify SQL Server is running and accessible
-            Write-Output "`nChecking SQL Server status..."
-            $sqlStatus = Get-Service -Name "MSSQLSERVER" | Select-Object Name, Status
-            Write-Output "SQL Server service status: $($sqlStatus.Status)"
-
-            # Test SQL connection with TrustServerCertificate
-            Write-Output "`nTesting SQL connection..."
-            try {
-                $testQuery = "SELECT @@VERSION as Version"
-                $sqlVersion = Invoke-Sqlcmd -Query $testQuery -ServerInstance "(local)" -TrustServerCertificate $true
-                Write-Output "SQL Server version: $($sqlVersion.Version)"
-            } catch {
-                Write-Output "SQL connection test failed: $_"
-            }'
+            # Open PowerShell as admin and run commands
+            Start-Process powershell -Verb RunAs -ArgumentList "-NoExit, -Command {
+                cd C:/Temp/EdFi.Suite3.RestApi.Databases.Standard;
+                Import-Module ./Deployment.psm1;
+                Initialize-DeploymentEnvironment;
+            }"'

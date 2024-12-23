@@ -46,7 +46,25 @@ jobs:
             cd "C:\Temp\EdFi.Suite3.RestApi.Databases.Standard"
             Write-Host "Starting deployment at $(Get-Date)"
             
+            # First try running EdFi.Db.Deploy directly to see its output
+            Write-Host "Testing EdFi.Db.Deploy directly..."
+            $deployOutput = & ".\tools\EdFi.Db.Deploy.exe" 2>&1
+            Write-Host "Deploy tool output: $deployOutput"
+            
+            Write-Host "Proceeding with normal deployment..."
             Import-Module .\Deployment.psm1
-            Initialize-DeploymentEnvironment
+            
+            # Run Initialize-DeploymentEnvironment with transcript
+            Start-Transcript -Path "C:\Windows\Temp\deployment.log" -Append
+            try {
+                Initialize-DeploymentEnvironment
+            }
+            finally {
+                Stop-Transcript
+                if (Test-Path "C:\Windows\Temp\deployment.log") {
+                    Write-Host "=== Deployment Log ==="
+                    Get-Content "C:\Windows\Temp\deployment.log"
+                }
+            }
             
             Write-Host "Deployment completed at $(Get-Date)"' 

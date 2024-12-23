@@ -69,10 +69,13 @@ jobs:
             "PowerShell execution test - $(Get-Date)" | Out-File "C:/Temp/powershell_test.txt"
 
             # Open PowerShell as admin and run commands
-            Start-Process powershell -Verb RunAs -ArgumentList "-NoExit, -Command {
-                cd C:/Temp/EdFi.Suite3.RestApi.Databases.Standard;
+            Start-Process powershell -Verb RunAs -Wait -ArgumentList "-NoExit, -Command {
+                Set-Location ''C:/Temp/EdFi.Suite3.RestApi.Databases.Standard'';
+                Write-Host ''Importing module...'';
                 Import-Module ./Deployment.psm1;
+                Write-Host ''Starting deployment...'';
                 Initialize-DeploymentEnvironment;
+                Write-Host ''Deployment completed'';
                 
                 # Create another test file from the new PowerShell session
                 ''New PowerShell session test - $(Get-Date)'' | Out-File ''C:/Temp/powershell_test_2.txt'';

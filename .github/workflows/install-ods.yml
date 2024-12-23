@@ -66,37 +66,37 @@ jobs:
             Expand-Archive -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.zip" -DestinationPath "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin" -Force;
 
             # Initialize RestApi Databases and Validate
-            Set-Location -Path "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard";
+            Set-Location -Path "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard"
             
-            Start-Process powershell -Verb RunAs -ArgumentList "-NoExit -Command {
-                Set-Location -Path C:/Temp/EdFi.Suite3.RestApi.Databases.Standard;
-                Import-Module ./Deployment.psm1;
-                Initialize-DeploymentEnvironment -Engine SQLServer;
+            Write-Output "Starting validation..."
+            
+            # Import module and run initialization
+            $output = & {
+                Import-Module ./Deployment.psm1
+                Initialize-DeploymentEnvironment -Engine SQLServer
+            } 2>&1
 
-                Write-Host ''Validating installation...'';
-                
-                # Check if databases were created
-                $query = ''SELECT name FROM sys.databases WHERE name IN (''''EdFi_Admin'''', ''''EdFi_Security'''', ''''EdFi_Ods'''');'';
-                $databases = Invoke-Sqlcmd -Query $query -ServerInstance ''(local)'';
-                
-                Write-Host ''Found databases:'';
-                $databases | ForEach-Object { Write-Host $_.name };
-                
-                # Check if files exist in expected locations
-                $paths = @(
-                    ''C:/Temp/EdFi.Suite3.Installer.WebApi'',
-                    ''C:/Temp/EdFi.Suite3.RestApi.Databases.Standard'',
-                    ''C:/Temp/EdFi.Suite3.Installer.SwaggerUI'',
-                    ''C:/Temp/EdFi.Suite3.Installer.SandboxAdmin''
-                );
-                
-                Write-Host ''`nChecking installation directories:'';
-                foreach ($path in $paths) {
-                    $exists = Test-Path $path;
-                    Write-Host ''$path exists: $exists'';
-                    if ($exists) {
-                        Write-Host ''Files in directory:'';
-                        Get-ChildItem $path -File | Select-Object -First 5 | ForEach-Object { Write-Host ''- $($_.Name)'' };
+            Write-Output "Initialization Output:"
+            Write-Output $output
+
+            # Database validation
+            Write-Output "`nChecking databases..."
+            $dbQuery = "SELECT name FROM sys.databases WHERE name LIKE ''EdFi%'';"
+            $dbOutput = Invoke-Sqlcmd -Query $dbQuery -ServerInstance "(local)" 2>&1
+            Write-Output "Found databases:"
+            Write-Output $dbOutput
+
+            # Directory validation
+            Write-Output "`nChecking directories..."
+            $dirs = Get-ChildItem "C:/Temp" -Directory -Filter "EdFi*"
+            Write-Output "Found directories:"
+            foreach ($dir in $dirs) {
+                Write-Output $dir.FullName
+                $files = Get-ChildItem $dir.FullName -File | Select-Object -First 3
+                if ($files) {
+                    Write-Output "Sample files:"
+                    foreach ($file in $files) {
+                        Write-Output "  - $($file.Name)"
                     }
                 }
-            }"'
+            }'

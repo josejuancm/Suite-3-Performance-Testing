@@ -37,7 +37,7 @@ jobs:
         with:
           creds: '{"clientId":"${{ env.ARM_CLIENT_ID }}","clientSecret":"${{ env.ARM_CLIENT_SECRET }}","subscriptionId":"${{ env.ARM_SUBSCRIPTION_ID }}","tenantId":"${{ env.ARM_TENANT_ID }}"}'
 
-      - name: Run Command on VM
+      - name: Download Components
         run: |
           az vm run-command invoke \
             --command-id RunPowerShellScript \
@@ -63,7 +63,4 @@ jobs:
             # Download and extract SandboxAdmin
             Invoke-WebRequest -Uri "https://pkgs.dev.azure.com/ed-fi-alliance/Ed-Fi-Alliance-OSS/_apis/packaging/feeds/EdFi@Release/nuget/packages/EdFi.Suite3.Installer.SandboxAdmin/versions/7.2.7/content" -OutFile "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.nupkg"
             Rename-Item -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.nupkg" -NewName "EdFi.Suite3.Installer.SandboxAdmin.zip"
-            Expand-Archive -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.zip" -DestinationPath "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin" -Force
-
-            # Open PowerShell and create a file
-            cmd.exe /c start powershell.exe -Command "New-Item -Path C:\Temp\download-complete.txt -ItemType File -Force; exit"'
+            Expand-Archive -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.zip" -DestinationPath "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin" -Force'

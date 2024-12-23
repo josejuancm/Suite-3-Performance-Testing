@@ -40,31 +40,17 @@ jobs:
             --name "${{ github.event.inputs.vm_name }}" \
             --resource-group "${{ github.event.inputs.resource_group }}" \
             --scripts '
-            $ErrorActionPreference = "Continue"
-            $VerbosePreference = "Continue"
-            
             cd "C:\Temp\EdFi.Suite3.RestApi.Databases.Standard"
-            Write-Host "Starting deployment at $(Get-Date)"
             
-            # First try running EdFi.Db.Deploy directly to see its output
-            Write-Host "Testing EdFi.Db.Deploy directly..."
-            $deployOutput = & ".\tools\EdFi.Db.Deploy.exe" 2>&1
-            Write-Host "Deploy tool output: $deployOutput"
+            # Verify configuration.json exists and has correct settings
+            if (Test-Path ".\configuration.json") {
+                Write-Host "Found configuration.json"
+                Get-Content ".\configuration.json"
+            } else {
+                Write-Error "configuration.json not found!"
+                exit 1
+            }
             
-            Write-Host "Proceeding with normal deployment..."
+            # Run the exact commands from the documentation
             Import-Module .\Deployment.psm1
-            
-            # Run Initialize-DeploymentEnvironment with transcript
-            Start-Transcript -Path "C:\Windows\Temp\deployment.log" -Append
-            try {
-                Initialize-DeploymentEnvironment
-            }
-            finally {
-                Stop-Transcript
-                if (Test-Path "C:\Windows\Temp\deployment.log") {
-                    Write-Host "=== Deployment Log ==="
-                    Get-Content "C:\Windows\Temp\deployment.log"
-                }
-            }
-            
-            Write-Host "Deployment completed at $(Get-Date)"' 
+            Initialize-DeploymentEnvironment' 

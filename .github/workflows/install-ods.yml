@@ -86,4 +86,4 @@ jobs:
             # Check for databases
             Write-Host "Checking databases..."
             $query = "SELECT name FROM sys.databases WHERE name LIKE ''EdFi%''"
-            Invoke-Sqlcmd -Query $query -ServerInstance "(local)" | ForEach-Object { Write-Host $_.name }'
+            Invoke-Sqlcmd -Query $query -ServerInstance "(local)" | ForEach-Object { Write-Host $_.name }' 

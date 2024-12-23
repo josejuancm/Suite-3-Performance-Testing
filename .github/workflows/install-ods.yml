@@ -77,7 +77,7 @@ jobs:
                 
                 & $deployPath Deploy `
                     --engine SQLServer `
-                    --connectionString "server=(local);trusted_connection=True;database=EdFi_Admin;application name=EdFi.Ods.WebApi;Encrypt=False" `
+                    --connectionString "server=(local);trusted_connection=True;database=EdFi_Admin;application name=EdFi.Ods.WebApi;TrustServerCertificate=True" `
                     --database Admin `
                     --filePaths "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard/Ed-Fi-ODS/Application/EdFi.Ods.Standard","C:/Temp/EdFi.Suite3.RestApi.Databases.Standard/Ed-Fi-ODS" `
                     --standardVersion "5.1.0" `
@@ -94,11 +94,11 @@ jobs:
             $sqlStatus = Get-Service -Name "MSSQLSERVER" | Select-Object Name, Status
             Write-Output "SQL Server service status: $($sqlStatus.Status)"
 
-            # Test SQL connection
+            # Test SQL connection with TrustServerCertificate
             Write-Output "`nTesting SQL connection..."
             try {
                 $testQuery = "SELECT @@VERSION as Version"
-                $sqlVersion = Invoke-Sqlcmd -Query $testQuery -ServerInstance "(local)" -ErrorAction Stop
+                $sqlVersion = Invoke-Sqlcmd -Query $testQuery -ServerInstance "(local)" -TrustServerCertificate $true
                 Write-Output "SQL Server version: $($sqlVersion.Version)"
             } catch {
                 Write-Output "SQL connection test failed: $_"

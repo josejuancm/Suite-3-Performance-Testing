@@ -68,21 +68,13 @@ jobs:
             # Create a test file
             "PowerShell execution test - $(Get-Date)" | Out-File "C:/Temp/powershell_test.txt"
 
-            # Run commands directly
-            Write-Host "Changing to database directory..."
-            Set-Location "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard"
-            
-            Write-Host "Importing module..."
-            Import-Module ./Deployment.psm1
-            
-            Write-Host "Starting deployment..."
-            Initialize-DeploymentEnvironment
-            
-            Write-Host "Checking for databases..."
-            $query = "SELECT name FROM sys.databases WHERE name LIKE ''EdFi%''"
-            $databases = Invoke-Sqlcmd -Query $query -ServerInstance "(local)"
-            Write-Host "Found databases:"
-            $databases | ForEach-Object { Write-Host $_.name }
-            
-            Write-Host "Deployment completed"
-            "Deployment completed - $(Get-Date)" | Out-File "C:/Temp/deployment_complete.txt"'
+            # Run PowerShell commands directly
+            powershell.exe -Command {
+                Write-Host "Changing to database directory...";
+                Set-Location "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard";
+                
+                Write-Host "Importing module...";
+                Import-Module ./Deployment.psm1;
+                
+                Write-Host "Deployment completed";
+            }'

@@ -70,10 +70,17 @@ jobs:
             
             Write-Output "Starting validation..."
             
-            # Import module and run initialization
+            # Import module and run initialization with specific parameters
             $output = & {
                 Import-Module ./Deployment.psm1
-                Initialize-DeploymentEnvironment -Engine SQLServer
+                $params = @{
+                    Engine = "SQLServer"
+                    DatabaseServer = "(local)"
+                    Port = 1433
+                    UseIntegratedSecurity = $true
+                    Verbose = $true
+                }
+                Initialize-DeploymentEnvironment @params
             } 2>&1
 
             Write-Output "Initialization Output:"

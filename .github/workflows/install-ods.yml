@@ -65,9 +65,15 @@ jobs:
             Rename-Item -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.nupkg" -NewName "EdFi.Suite3.Installer.SandboxAdmin.zip";
             Expand-Archive -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.zip" -DestinationPath "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin" -Force;
 
+            # Create a test file
+            "PowerShell execution test - $(Get-Date)" | Out-File "C:/Temp/powershell_test.txt"
+
             # Open PowerShell as admin and run commands
             Start-Process powershell -Verb RunAs -ArgumentList "-NoExit, -Command {
                 cd C:/Temp/EdFi.Suite3.RestApi.Databases.Standard;
                 Import-Module ./Deployment.psm1;
                 Initialize-DeploymentEnvironment;
+                
+                # Create another test file from the new PowerShell session
+                ''New PowerShell session test - $(Get-Date)'' | Out-File ''C:/Temp/powershell_test_2.txt'';
             }"'

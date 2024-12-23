@@ -68,42 +68,38 @@ jobs:
             # Initialize RestApi Databases and Validate
             Set-Location -Path "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard"
             
-            Write-Output "Starting validation..."
+            Write-Output "Starting database deployment..."
             
-            # Import module and run initialization with specific parameters
-            $output = & {
-                Import-Module ./Deployment.psm1
-                $params = @{
-                    Engine = "SQLServer"
-                    DatabaseServer = "(local)"
-                    Port = 1433
-                    UseIntegratedSecurity = $true
-                    Verbose = $true
-                }
-                Initialize-DeploymentEnvironment @params
+            # Try running EdFi.Db.Deploy directly with detailed output
+            $deployOutput = & {
+                $deployPath = "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard/tools/EdFi.Db.Deploy.exe"
+                Write-Output "Checking deploy tool exists: $(Test-Path $deployPath)"
+                
+                & $deployPath Deploy `
+                    --engine SQLServer `
+                    --connectionString "server=(local);trusted_connection=True;database=EdFi_Admin;application name=EdFi.Ods.WebApi;Encrypt=False" `
+                    --database Admin `
+                    --filePaths "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard/Ed-Fi-ODS/Application/EdFi.Ods.Standard","C:/Temp/EdFi.Suite3.RestApi.Databases.Standard/Ed-Fi-ODS" `
+                    --standardVersion "5.1.0" `
+                    --extensionVersion "1.1.0" `
+                    --features "Changes" `
+                    -v
             } 2>&1
 
-            Write-Output "Initialization Output:"
-            Write-Output $output
+            Write-Output "Deploy tool output:"
+            Write-Output $deployOutput
 
-            # Database validation
-            Write-Output "`nChecking databases..."
-            $dbQuery = "SELECT name FROM sys.databases WHERE name LIKE ''EdFi%'';"
-            $dbOutput = Invoke-Sqlcmd -Query $dbQuery -ServerInstance "(local)" 2>&1
-            Write-Output "Found databases:"
-            Write-Output $dbOutput
+            # Verify SQL Server is running and accessible
+            Write-Output "`nChecking SQL Server status..."
+            $sqlStatus = Get-Service -Name "MSSQLSERVER" | Select-Object Name, Status
+            Write-Output "SQL Server service status: $($sqlStatus.Status)"
 
-            # Directory validation
-            Write-Output "`nChecking directories..."
-            $dirs = Get-ChildItem "C:/Temp" -Directory -Filter "EdFi*"
-            Write-Output "Found directories:"
-            foreach ($dir in $dirs) {
-                Write-Output $dir.FullName
-                $files = Get-ChildItem $dir.FullName -File | Select-Object -First 3
-                if ($files) {
-                    Write-Output "Sample files:"
-                    foreach ($file in $files) {
-                        Write-Output "  - $($file.Name)"
-                    }
-                }
+            # Test SQL connection
+            Write-Output "`nTesting SQL connection..."
+            try {
+                $testQuery = "SELECT @@VERSION as Version"
+                $sqlVersion = Invoke-Sqlcmd -Query $testQuery -ServerInstance "(local)" -ErrorAction Stop
+                Write-Output "SQL Server version: $($sqlVersion.Version)"
+            } catch {
+                Write-Output "SQL connection test failed: $_"
             }'

@@ -51,5 +51,5 @@ jobs:
 
             # Download and extract RestApi Databases
             Invoke-WebRequest -Uri "https://pkgs.dev.azure.com/ed-fi-alliance/Ed-Fi-Alliance-OSS/_apis/packaging/feeds/EdFi@Release/nuget/packages/EdFi.Suite3.RestApi.Databases.Standard.5.1.0/versions/7.2.1201/content" -OutFile "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard.5.1.0.nupkg";
-            Rename-Item -Path "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard.5.1.0.nupkg" -NewName "EdFi.Suite3.RestApi.Databases.Standard.5.1.0.zip";
-            Expand-Archive -Path "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard.5.1.0.zip" -DestinationPath "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard.5.1.0" -Force'
+            Rename-Item -Path "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard.5.1.0.nupkg" -NewName "EdFi.Suite3.RestApi.Databases.Standard.zip";
+            Expand-Archive -Path "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard.zip" -DestinationPath "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard" -Force'

@@ -35,44 +35,33 @@ jobs:
 
       - name: Run Deployment Commands
         run: |
-          echo "Starting deployment command..."
-          COMMAND_ID=$(az vm run-command invoke \
+          az vm run-command invoke \
             --command-id RunPowerShellScript \
             --name "${{ github.event.inputs.vm_name }}" \
             --resource-group "${{ github.event.inputs.resource_group }}" \
             --scripts '
             cd "C:\Temp\EdFi.Suite3.RestApi.Databases.Standard"
-            Import-Module .\Deployment.psm1
-            Initialize-DeploymentEnvironment -ErrorAction Stop' \
-            --async \
-            --query 'id' -o tsv)
-          
-          echo "Waiting for command to complete..."
-          while true; do
-            STATUS=$(az vm run-command show \
-              --name "${{ github.event.inputs.vm_name }}" \
-              --resource-group "${{ github.event.inputs.resource_group }}" \
-              --command-id $COMMAND_ID \
-              --query 'provisioningState' -o tsv)
             
-            if [ "$STATUS" = "Succeeded" ]; then
-              echo "Command completed successfully"
-              break
-            elif [ "$STATUS" = "Failed" ]; then
-              echo "Command failed"
-              az vm run-command show \
-                --name "${{ github.event.inputs.vm_name }}" \
-                --resource-group "${{ github.event.inputs.resource_group }}" \
-                --command-id $COMMAND_ID
-              exit 1
-            fi
+            Write-Host "Starting deployment in background job..."
+            $job = Start-Job -ScriptBlock {
+                Set-Location "C:\Temp\EdFi.Suite3.RestApi.Databases.Standard"
+                Import-Module .\Deployment.psm1
+                Initialize-DeploymentEnvironment -ErrorAction Stop
+            }
             
-            echo "Command still running... ($STATUS)"
-            sleep 30
-          done
-          
-          # Show the final output
-          az vm run-command show \
-            --name "${{ github.event.inputs.vm_name }}" \
-            --resource-group "${{ github.event.inputs.resource_group }}" \
-            --command-id $COMMAND_ID 
+            Write-Host "Waiting for deployment to complete..."
+            while ($job.State -eq "Running") {
+                Write-Host "Job still running... $(Get-Date)"
+                Start-Sleep -Seconds 30
+                $job | Receive-Job
+            }
+            
+            $result = $job | Receive-Job -Keep
+            if ($job.State -eq "Failed") {
+                Write-Error "Deployment failed"
+                Write-Error $result
+                throw "Deployment failed"
+            }
+            
+            Write-Host "Deployment completed successfully"
+            Write-Host $result' 

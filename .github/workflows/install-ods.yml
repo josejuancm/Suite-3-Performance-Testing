@@ -74,3 +74,31 @@ jobs:
                 Import-Module ./Deployment.psm1;
                 Initialize-DeploymentEnvironment -Engine SQLServer
             }"'
+
+            # Validate installation
+            Write-Host "Validating installation..."
+            
+            # Check if databases were created
+            $query = "SELECT name FROM sys.databases WHERE name IN (''EdFi_Admin'', ''EdFi_Security'', ''EdFi_Ods'');"
+            $databases = Invoke-Sqlcmd -Query $query -ServerInstance "(local)"
+            
+            Write-Host "Found databases:"
+            $databases | ForEach-Object { Write-Host $_.name }
+            
+            # Check if files exist in expected locations
+            $paths = @(
+                "C:/Temp/EdFi.Suite3.Installer.WebApi",
+                "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard",
+                "C:/Temp/EdFi.Suite3.Installer.SwaggerUI",
+                "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin"
+            )
+            
+            Write-Host "`nChecking installation directories:"
+            foreach ($path in $paths) {
+                $exists = Test-Path $path
+                Write-Host "$path exists: $exists"
+                if ($exists) {
+                    Write-Host "Files in directory:"
+                    Get-ChildItem $path -File | Select-Object -First 5 | ForEach-Object { Write-Host "- $($_.Name)" }
+                }
+            }'

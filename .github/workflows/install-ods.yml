@@ -66,10 +66,11 @@ jobs:
             Expand-Archive -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.zip" -DestinationPath "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin" -Force
 
             # Create and run PowerShell script for database initialization
-            $scriptContent = @"
+            $scriptContent = '@
             Set-Location "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard"
             Import-Module ./Deployment.psm1
-            Initialize-DeploymentEnvironment"@
+            Initialize-DeploymentEnvironment
+            '@
 
             # Save and run script
             $scriptContent | Out-File "C:/Temp/deploy-edfi.ps1"

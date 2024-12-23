@@ -63,4 +63,9 @@ jobs:
             # Download and extract SandboxAdmin
             Invoke-WebRequest -Uri "https://pkgs.dev.azure.com/ed-fi-alliance/Ed-Fi-Alliance-OSS/_apis/packaging/feeds/EdFi@Release/nuget/packages/EdFi.Suite3.Installer.SandboxAdmin/versions/7.2.7/content" -OutFile "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.nupkg"
             Rename-Item -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.nupkg" -NewName "EdFi.Suite3.Installer.SandboxAdmin.zip"
-            Expand-Archive -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.zip" -DestinationPath "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin" -Force'
+            Expand-Archive -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.zip" -DestinationPath "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin" -Force
+
+            # Change directory to WebApi Installer location and initialize deployment
+            Set-Location -Path "C:/Temp/EdFi.Suite3.Installer.WebApi/tools"
+            Import-Module ./Deployment.psm1
+            Initialize-DeploymentEnvironment'

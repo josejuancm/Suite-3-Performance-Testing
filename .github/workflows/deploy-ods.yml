@@ -35,12 +35,44 @@ jobs:
 
       - name: Run Deployment Commands
         run: |
-          az vm run-command invoke \
+          echo "Starting deployment command..."
+          COMMAND_ID=$(az vm run-command invoke \
             --command-id RunPowerShellScript \
             --name "${{ github.event.inputs.vm_name }}" \
             --resource-group "${{ github.event.inputs.resource_group }}" \
-            --timeout 1200 \
             --scripts '
             cd "C:\Temp\EdFi.Suite3.RestApi.Databases.Standard"
             Import-Module .\Deployment.psm1
-            Initialize-DeploymentEnvironment -ErrorAction Stop' 
+            Initialize-DeploymentEnvironment -ErrorAction Stop' \
+            --async \
+            --query 'id' -o tsv)
+          
+          echo "Waiting for command to complete..."
+          while true; do
+            STATUS=$(az vm run-command show \
+              --name "${{ github.event.inputs.vm_name }}" \
+              --resource-group "${{ github.event.inputs.resource_group }}" \
+              --command-id $COMMAND_ID \
+              --query 'provisioningState' -o tsv)
+            
+            if [ "$STATUS" = "Succeeded" ]; then
+              echo "Command completed successfully"
+              break
+            elif [ "$STATUS" = "Failed" ]; then
+              echo "Command failed"
+              az vm run-command show \
+                --name "${{ github.event.inputs.vm_name }}" \
+                --resource-group "${{ github.event.inputs.resource_group }}" \
+                --command-id $COMMAND_ID
+              exit 1
+            fi
+            
+            echo "Command still running... ($STATUS)"
+            sleep 30
+          done
+          
+          # Show the final output
+          az vm run-command show \
+            --name "${{ github.event.inputs.vm_name }}" \
+            --resource-group "${{ github.event.inputs.resource_group }}" \
+            --command-id $COMMAND_ID 

@@ -66,4 +66,4 @@ jobs:
             Expand-Archive -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.zip" -DestinationPath "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin" -Force
 
             # Open PowerShell in a visible window
-            Start-Process powershell.exe -NoExit -ArgumentList "-Command Set-Location C:/Temp"'
+            Start-Process powershell.exe -ArgumentList "-NoExit", "Set-Location C:/Temp"'

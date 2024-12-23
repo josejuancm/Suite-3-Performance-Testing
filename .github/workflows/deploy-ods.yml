@@ -39,12 +39,8 @@ jobs:
             --command-id RunPowerShellScript \
             --name "${{ github.event.inputs.vm_name }}" \
             --resource-group "${{ github.event.inputs.resource_group }}" \
+            --timeout 1200 \
             --scripts '
-            Write-Host "Changing to database directory..."
             cd "C:\Temp\EdFi.Suite3.RestApi.Databases.Standard"
-            
-            Write-Host "Importing Deployment module..."
-            Import-Module .\Deployment.psm1 -Force -Verbose
-            
-            Write-Host "Initializing deployment environment..."
+            Import-Module .\Deployment.psm1
             Initialize-DeploymentEnvironment -ErrorAction Stop' 

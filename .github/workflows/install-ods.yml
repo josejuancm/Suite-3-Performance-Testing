@@ -65,16 +65,25 @@ jobs:
             Rename-Item -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.nupkg" -NewName "EdFi.Suite3.Installer.SandboxAdmin.zip";
             Expand-Archive -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.zip" -DestinationPath "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin" -Force;
 
-            # Create a test file
-            "PowerShell execution test - $(Get-Date)" | Out-File "C:/Temp/powershell_test.txt"
+            # Create and run a PowerShell script
+            $scriptContent = @"
+            Write-Host "Starting database deployment..."
+            Set-Location "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard"
+            Import-Module ./Deployment.psm1
+            Initialize-DeploymentEnvironment
+            Write-Host "Deployment completed"
+            "@
 
-            # Run PowerShell commands directly
-            powershell.exe -Command {
-                Write-Host "Changing to database directory...";
-                Set-Location "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard";
-                
-                Write-Host "Importing module...";
-                Import-Module ./Deployment.psm1;
-                
-                Write-Host "Deployment completed";
-            }'
+            # Save the script
+            $scriptContent | Out-File "C:/Temp/deploy-edfi.ps1"
+
+            # Run the script with elevated privileges
+            $process = Start-Process powershell.exe -ArgumentList "-ExecutionPolicy Bypass -File C:/Temp/deploy-edfi.ps1" -Verb RunAs -PassThru -Wait
+
+            # Check the exit code
+            Write-Host "Script completed with exit code: $($process.ExitCode)"
+
+            # Check for databases
+            Write-Host "Checking databases..."
+            $query = "SELECT name FROM sys.databases WHERE name LIKE ''EdFi%''"
+            Invoke-Sqlcmd -Query $query -ServerInstance "(local)" | ForEach-Object { Write-Host $_.name }'

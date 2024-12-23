@@ -65,7 +65,21 @@ jobs:
             Rename-Item -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.nupkg" -NewName "EdFi.Suite3.Installer.SandboxAdmin.zip";
             Expand-Archive -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.zip" -DestinationPath "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin" -Force;
 
-            # Initialize RestApi Databases
+            # Initialize RestApi Databases with error handling
             Set-Location -Path "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard";
-            Import-Module ./Deployment.psm1;
-            Initialize-DeploymentEnvironment'
+            
+            # Enable verbose output
+            $VerbosePreference = "Continue"
+            
+            Write-Host "Importing Deployment Module..."
+            Import-Module ./Deployment.psm1 -Verbose
+            
+            Write-Host "Starting Deployment Environment Initialization..."
+            try {
+                Initialize-DeploymentEnvironment -Engine SQLServer -Verbose
+            }
+            catch {
+                Write-Error "Error during deployment: $_"
+                Write-Error $_.ScriptStackTrace
+                throw
+            }'

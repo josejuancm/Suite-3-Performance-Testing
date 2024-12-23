@@ -53,6 +53,7 @@ jobs:
             Invoke-WebRequest -Uri "https://pkgs.dev.azure.com/ed-fi-alliance/Ed-Fi-Alliance-OSS/_apis/packaging/feeds/EdFi@Release/nuget/packages/EdFi.Suite3.RestApi.Databases.Standard.5.1.0/versions/7.2.1201/content" -OutFile "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard.5.1.0.nupkg";
             Rename-Item -Path "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard.5.1.0.nupkg" -NewName "EdFi.Suite3.RestApi.Databases.Standard.zip";
             Expand-Archive -Path "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard.zip" -DestinationPath "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard" -Force;
+            Remove-Item -Path "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard/configuration.postgreSQL.json" -Force;
 
             # Download and extract SwaggerUI
             Invoke-WebRequest -Uri "https://pkgs.dev.azure.com/ed-fi-alliance/Ed-Fi-Alliance-OSS/_apis/packaging/feeds/EdFi@Release/nuget/packages/EdFi.Suite3.Installer.SwaggerUI/versions/7.2.6/content" -OutFile "C:/Temp/EdFi.Suite3.Installer.SwaggerUI.nupkg";

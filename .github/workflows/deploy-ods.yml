@@ -40,49 +40,34 @@ jobs:
             --name "${{ github.event.inputs.vm_name }}" \
             --resource-group "${{ github.event.inputs.resource_group }}" \
             --scripts '
-            $ErrorActionPreference = "Continue"
-            $VerbosePreference = "Continue"
-            
             try {
                 Set-Location "C:\Temp\EdFi.Suite3.RestApi.Databases.Standard"
                 
-                # Check SQL Server status
-                $sqlService = Get-Service MSSQLSERVER
-                Write-Host "SQL Server Status: $($sqlService.Status)"
-                
-                # Test SQL connectivity
-                $sqlcmd = "SELECT @@version"
-                $result = Invoke-Sqlcmd -Query $sqlcmd -ServerInstance "(local)" -ErrorAction Stop
-                Write-Host "SQL Server Version: $($result.Column1)"
-                
-                # Check EdFi.Db.Deploy
-                $deployTool = ".\tools\EdFi.Db.Deploy.exe"
-                Write-Host "Deploy tool exists: $(Test-Path $deployTool)"
-                Write-Host "Deploy tool version: $((Get-Item $deployTool).VersionInfo.FileVersion)"
+                # Update configuration to trust server certificate
+                $configPath = ".\configuration.json"
+                if (Test-Path $configPath) {
+                    $config = Get-Content $configPath | ConvertFrom-Json
+                    if ($config.connectionStrings) {
+                        $config.connectionStrings | Get-Member -MemberType NoteProperty | ForEach-Object {
+                            $connStr = $config.connectionStrings.($_.Name)
+                            if ($connStr -notlike "*TrustServerCertificate=True*") {
+                                $config.connectionStrings.($_.Name) = "$connStr;TrustServerCertificate=True"
+                            }
+                        }
+                        $config | ConvertTo-Json -Depth 10 | Set-Content $configPath
+                        Write-Host "Updated configuration.json with TrustServerCertificate=True"
+                    }
+                }
                 
                 Write-Host "Importing module..."
-                Import-Module .\Deployment.psm1 -Verbose
+                Import-Module .\Deployment.psm1
                 
                 Write-Host "Starting deployment..."
-                $env:PSModulePath = $env:PSModulePath + ";C:\Program Files\WindowsPowerShell\Modules"
-                Initialize-DeploymentEnvironment -Verbose *>&1 | Tee-Object -FilePath "C:\Windows\Temp\deploy.log"
-                
-                if ($LASTEXITCODE -ne 0) {
-                    throw "Deployment failed with exit code: $LASTEXITCODE"
-                }
+                Initialize-DeploymentEnvironment
                 
                 Write-Host "Deployment completed successfully"
             }
             catch {
                 Write-Error "Error occurred: $_"
-                if (Test-Path "C:\Windows\Temp\deploy.log") {
-                    Write-Host "=== Deployment Log ==="
-                    Get-Content "C:\Windows\Temp\deploy.log"
-                }
-                
-                # Get SQL error log
-                Write-Host "=== SQL Server Error Log ==="
-                Get-Content "C:\Program Files\Microsoft SQL Server\MSSQL15.MSSQLSERVER\MSSQL\Log\ERRORLOG"
-                
                 exit 1
             }' 

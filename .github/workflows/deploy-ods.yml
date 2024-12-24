@@ -36,11 +36,31 @@ jobs:
       - name: Run Deployment Commands
         run: |
           SCRIPT_CONTENT='
-          Start-Process powershell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command {
-              cd \"C:\Temp\EdFi.Suite3.RestApi.Databases.Standard\"
+          $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -Command {
+              Set-Location \"C:\Temp\EdFi.Suite3.RestApi.Databases.Standard\"
               Import-Module .\Deployment.psm1
               Initialize-DeploymentEnvironment
           }"
+          
+          $principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
+          
+          Register-ScheduledTask -TaskName "DeployODS" -Action $action -Principal $principal -Force
+          
+          Start-ScheduledTask -TaskName "DeployODS"
+          
+          # Wait for task to complete
+          while ((Get-ScheduledTask -TaskName "DeployODS").State -ne "Ready") {
+              Start-Sleep -Seconds 5
+          }
+          
+          # Get the task result
+          $taskResult = Get-ScheduledTaskInfo -TaskName "DeployODS"
+          if ($taskResult.LastTaskResult -ne 0) {
+              throw "Task failed with result: $($taskResult.LastTaskResult)"
+          }
+          
+          # Cleanup
+          Unregister-ScheduledTask -TaskName "DeployODS" -Confirm:$false
           '
           
           az vm run-command invoke \

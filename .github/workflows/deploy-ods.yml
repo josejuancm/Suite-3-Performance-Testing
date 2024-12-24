@@ -35,11 +35,12 @@ jobs:
 
       - name: Run Deployment Commands
         run: |
-          # Create a base64 encoded script to avoid quoting issues
           SCRIPT_CONTENT='
-          cd "C:\Temp\EdFi.Suite3.RestApi.Databases.Standard"
-          Import-Module .\Deployment.psm1
-          Initialize-DeploymentEnvironment
+          Start-Process powershell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command {
+              cd \"C:\Temp\EdFi.Suite3.RestApi.Databases.Standard\"
+              Import-Module .\Deployment.psm1
+              Initialize-DeploymentEnvironment
+          }"
           '
           
           az vm run-command invoke \

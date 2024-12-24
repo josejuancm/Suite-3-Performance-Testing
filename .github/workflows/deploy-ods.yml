@@ -33,23 +33,17 @@ jobs:
         with:
           creds: '{"clientId":"${{ env.ARM_CLIENT_ID }}","clientSecret":"${{ env.ARM_CLIENT_SECRET }}","subscriptionId":"${{ env.ARM_SUBSCRIPTION_ID }}","tenantId":"${{ env.ARM_TENANT_ID }}"}'
 
-      - name: Create and Run Automation Runbook
+      - name: Run Deployment Commands
         run: |
-          # Create temporary script file
-          echo 'cd "C:\Temp\EdFi.Suite3.RestApi.Databases.Standard"
+          # Create a base64 encoded script to avoid quoting issues
+          SCRIPT_CONTENT='
+          cd "C:\Temp\EdFi.Suite3.RestApi.Databases.Standard"
           Import-Module .\Deployment.psm1
-          Initialize-DeploymentEnvironment' > deploy-ods.ps1
+          Initialize-DeploymentEnvironment
+          '
           
-          # Create and publish runbook
-          az automation runbook create \
-            --automation-account-name "YourAutomationAccount" \
-            --name "DeployODS" \
+          az vm run-command invoke \
+            --command-id RunPowerShellScript \
+            --name "${{ github.event.inputs.vm_name }}" \
             --resource-group "${{ github.event.inputs.resource_group }}" \
-            --type PowerShell \
-            --content "@deploy-ods.ps1"
-          
-          # Run the runbook
-          az automation runbook start \
-            --automation-account-name "YourAutomationAccount" \
-            --name "DeployODS" \
-            --resource-group "${{ github.event.inputs.resource_group }}" 
+            --scripts "$SCRIPT_CONTENT" 

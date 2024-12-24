@@ -35,12 +35,10 @@ jobs:
 
       - name: Create and Run Automation Runbook
         run: |
-          # Create runbook content
-          $runbookContent = @'
-          cd "C:\Temp\EdFi.Suite3.RestApi.Databases.Standard"
+          # Create temporary script file
+          echo 'cd "C:\Temp\EdFi.Suite3.RestApi.Databases.Standard"
           Import-Module .\Deployment.psm1
-          Initialize-DeploymentEnvironment
-          '@
+          Initialize-DeploymentEnvironment' > deploy-ods.ps1
           
           # Create and publish runbook
           az automation runbook create \
@@ -48,7 +46,7 @@ jobs:
             --name "DeployODS" \
             --resource-group "${{ github.event.inputs.resource_group }}" \
             --type PowerShell \
-            --content "$runbookContent"
+            --content "@deploy-ods.ps1"
           
           # Run the runbook
           az automation runbook start \

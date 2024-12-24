@@ -40,34 +40,6 @@ jobs:
             --name "${{ github.event.inputs.vm_name }}" \
             --resource-group "${{ github.event.inputs.resource_group }}" \
             --scripts '
-            try {
-                Set-Location "C:\Temp\EdFi.Suite3.RestApi.Databases.Standard"
-                
-                # Update configuration to trust server certificate
-                $configPath = ".\configuration.json"
-                if (Test-Path $configPath) {
-                    $config = Get-Content $configPath | ConvertFrom-Json
-                    if ($config.connectionStrings) {
-                        $config.connectionStrings | Get-Member -MemberType NoteProperty | ForEach-Object {
-                            $connStr = $config.connectionStrings.($_.Name)
-                            if ($connStr -notlike "*TrustServerCertificate=True*") {
-                                $config.connectionStrings.($_.Name) = "$connStr;TrustServerCertificate=True"
-                            }
-                        }
-                        $config | ConvertTo-Json -Depth 10 | Set-Content $configPath
-                        Write-Host "Updated configuration.json with TrustServerCertificate=True"
-                    }
-                }
-                
-                Write-Host "Importing module..."
-                Import-Module .\Deployment.psm1
-                
-                Write-Host "Starting deployment..."
-                Initialize-DeploymentEnvironment
-                
-                Write-Host "Deployment completed successfully"
-            }
-            catch {
-                Write-Error "Error occurred: $_"
-                exit 1
-            }' 
+            cd "C:\Temp\EdFi.Suite3.RestApi.Databases.Standard"
+            Import-Module .\Deployment.psm1
+            Initialize-DeploymentEnvironment' 

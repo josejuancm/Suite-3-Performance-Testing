@@ -38,11 +38,11 @@ jobs:
           SCRIPT_CONTENT='
           Set-Location "C:\Temp\EdFi.Suite3.RestApi.Databases.Standard"
           
-          Write-Host "Creating test file..."
-          Set-Content -Path "test.txt" -Value "Hello from deployment script!"
+          Write-Host "Creating PowerShell script file..."
+          Set-Content -Path "test.ps1" -Value "Write-Host \"Hello from PowerShell script!\""
           
-          Write-Host "File created successfully"
-          Get-Content -Path "test.txt"
+          Write-Host "Script file created successfully"
+          Get-Content -Path "test.ps1"
           '
           
           az vm run-command invoke \

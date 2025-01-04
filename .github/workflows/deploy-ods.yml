@@ -35,10 +35,36 @@ jobs:
 
       - name: Run Deployment Commands
         run: |
+          # Create the deployment script content
           SCRIPT_CONTENT='
           Set-Location "C:\Temp\EdFi.Suite3.RestApi.Databases.Standard"
+          
+          # Create deployment script
+          $deployScript = @"
+          Set-Location \"C:\Temp\EdFi.Suite3.RestApi.Databases.Standard\"
+          
+          Write-Host "Importing Deployment Module..."
           Import-Module .\Deployment.psm1
+          if (-not $?) {
+              Write-Error "Failed to import Deployment module"
+              exit 1
+          }
+          
+          Write-Host "Initializing Deployment Environment..."
           Initialize-DeploymentEnvironment
+          if (-not $?) {
+              Write-Error "Failed to initialize deployment environment"
+              exit 1
+          }
+          
+          Write-Host "Deployment completed successfully"
+          "@
+          
+          # Save the script
+          $deployScript | Out-File -FilePath "C:\Temp\deploy-ods.ps1" -Encoding UTF8
+          
+          # Execute the script
+          & powershell.exe -ExecutionPolicy Bypass -File "C:\Temp\deploy-ods.ps1"
           '
           
           az vm run-command invoke \

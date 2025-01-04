@@ -38,25 +38,11 @@ jobs:
           SCRIPT_CONTENT='
           Set-Location "C:\Temp\EdFi.Suite3.RestApi.Databases.Standard"
           
-          $script = ''
-          # Script: InitializeDeployment.ps1
+          Write-Host "Creating test file..."
+          Set-Content -Path "test.txt" -Value "Hello from deployment script!"
           
-          # Import the module. If this succeeds ($? will be $true),
-          # then run the next command.
-          Import-Module .\Deployment.psm1
-          
-          # Check if previous command was successful
-          if ($?) {
-              Initialize-DeploymentEnvironment
-          } else {
-              Write-Error "Failed to import Deployment.psm1. Aborting."
-              exit 1
-          }
-          ''
-          
-          Set-Content -Path "InitializeDeployment.ps1" -Value $script
-          
-          powershell.exe -ExecutionPolicy Bypass -File .\InitializeDeployment.ps1
+          Write-Host "File created successfully"
+          Get-Content -Path "test.txt"
           '
           
           az vm run-command invoke \

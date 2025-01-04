@@ -40,9 +40,7 @@ jobs:
           
           Write-Host "Creating text file..."
           "Import-Module .\Deployment.psm1" | Out-File -FilePath "test.txt"
-
-          Write-Host "Creating text file..."
-          "Initialize-DeploymentEnvironment" | Out-File -FilePath "test.txt"
+          "Initialize-DeploymentEnvironment" | Out-File -FilePath "test.txt" -Append
           
           Write-Host "File created successfully"
           Get-Content -Path "test.txt"

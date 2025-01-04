@@ -38,7 +38,8 @@ jobs:
           SCRIPT_CONTENT='
           Set-Location "C:\Temp\EdFi.Suite3.RestApi.Databases.Standard"
           
-          $script = "# Script: InitializeDeployment.ps1
+          $script = ''
+          # Script: InitializeDeployment.ps1
           
           # Import the module. If this succeeds ($? will be $true),
           # then run the next command.
@@ -48,9 +49,10 @@ jobs:
           if ($?) {
               Initialize-DeploymentEnvironment
           } else {
-              Write-Error \"Failed to import Deployment.psm1. Aborting.\"
+              Write-Error "Failed to import Deployment.psm1. Aborting."
               exit 1
-          }"
+          }
+          ''
           
           Set-Content -Path "InitializeDeployment.ps1" -Value $script
           

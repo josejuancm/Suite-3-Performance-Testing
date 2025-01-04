@@ -38,12 +38,12 @@ jobs:
           SCRIPT_CONTENT='
           Set-Location "C:\Temp\EdFi.Suite3.RestApi.Databases.Standard"
           
-          Write-Host "Creating text file..."
-          "Import-Module .\Deployment.psm1" | Out-File -FilePath "test.txt"
-          "Initialize-DeploymentEnvironment" | Out-File -FilePath "test.txt" -Append
+          Write-Host "Creating ps1 file..."
+          "Import-Module .\Deployment.psm1" | Out-File -FilePath "test.ps1"
+          "Initialize-DeploymentEnvironment" | Out-File -FilePath "test.ps1" -Append
           
           Write-Host "File created successfully"
-          Get-Content -Path "test.txt"
+          Get-Content -Path "test.ps1"
           '
           
           az vm run-command invoke \

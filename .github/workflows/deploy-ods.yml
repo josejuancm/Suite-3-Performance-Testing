@@ -39,7 +39,8 @@ jobs:
           Set-Location "C:\Temp\EdFi.Suite3.RestApi.Databases.Standard"
           
           Write-Host "Creating PowerShell script file..."
-          Set-Content -Path "test.ps1" -Value "Write-Host \"Hello from PowerShell script!\""
+          $content = ''Write-Host "Hello from PowerShell script!"''
+          Set-Content -Path "test.ps1" -Value $content
           
           Write-Host "Script file created successfully"
           Get-Content -Path "test.ps1"

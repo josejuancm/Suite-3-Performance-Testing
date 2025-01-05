@@ -44,6 +44,9 @@ jobs:
           
           Write-Host "File created successfully"
           Get-Content -Path "test.ps1"
+          
+          Write-Host "Executing PowerShell script..."
+          & powershell.exe -File "test.ps1"
           '
           
           az vm run-command invoke \

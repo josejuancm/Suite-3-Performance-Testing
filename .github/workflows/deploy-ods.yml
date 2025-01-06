@@ -51,12 +51,12 @@ jobs:
             --resource-group "${{ github.event.inputs.resource_group }}" \
             --scripts "$SCRIPT_CONTENT" 
 
-            - name: Execute PowerShell Command on Azure VM
-            uses: appleboy/ssh-action@v0.1.8
-            with:
-              host: 13.86.213.253
-              username: exampleadmin
-              password: Password1234!
-              port: 22
-              script: |
-                powershell.exe -Command "Start-Process -FilePath 'C:\\Temp\\EdFi.Suite3.RestApi.Databases.Standard\\test.ps1' -ArgumentList '-ExecutionPolicy Bypass' -Verb RunAs"
+      - name: Execute PowerShell Command on Azure VM
+        uses: appleboy/ssh-action@v0.1.8
+        with:
+          host: 13.86.213.253
+          username: exampleadmin
+          password: Password1234!
+          port: 22
+          script: |
+            powershell.exe -Command "Start-Process -FilePath 'C:\\Temp\\EdFi.Suite3.RestApi.Databases.Standard\\test.ps1' -ArgumentList '-ExecutionPolicy Bypass' -Verb RunAs"

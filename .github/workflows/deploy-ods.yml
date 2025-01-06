@@ -57,4 +57,4 @@ jobs:
             --name "${{ github.event.inputs.vm_name }}" \
             --resource-group "${{ github.event.inputs.resource_group }}" \
             --command-id RunPowerShellScript \
-            --scripts "cd C:\\Temp\\EdFi.Suite3.RestApi.Databases.Standard; powershell.exe -ExecutionPolicy Bypass -File test.ps1"
+            --scripts "cd C:\\Temp\\EdFi.Suite3.RestApi.Databases.Standard; powershell.exe -ExecutionPolicy Bypass -Command \"Import-Module .\\Deployment.psm1; Initialize-DeploymentEnvironment\""

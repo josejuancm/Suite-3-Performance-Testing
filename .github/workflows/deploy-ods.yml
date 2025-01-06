@@ -33,43 +33,28 @@ jobs:
         with:
           creds: '{"clientId":"${{ env.ARM_CLIENT_ID }}","clientSecret":"${{ env.ARM_CLIENT_SECRET }}","subscriptionId":"${{ env.ARM_SUBSCRIPTION_ID }}","tenantId":"${{ env.ARM_TENANT_ID }}"}'
 
-      - name: Run Deployment Commands
-        run: |
-          SCRIPT_CONTENT='
-          Set-Location "C:\Temp\EdFi.Suite3.RestApi.Databases.Standard"
+      # - name: Run Deployment Commands
+      #   run: |
+      #     SCRIPT_CONTENT='
+      #     Set-Location "C:\Temp\EdFi.Suite3.RestApi.Databases.Standard"
           
-          Write-Host "Creating ps1 file..."
-          "Import-Module .\Deployment.psm1" | Out-File -FilePath "test.ps1"
-          "Initialize-DeploymentEnvironment" | Out-File -FilePath "test.ps1" -Append
+      #     Write-Host "Creating ps1 file..."
+      #     "Import-Module .\Deployment.psm1" | Out-File -FilePath "test.ps1"
+      #     "Initialize-DeploymentEnvironment" | Out-File -FilePath "test.ps1" -Append
           
-          Write-Host "File created successfully"
-          Get-Content -Path "test.ps1"'
+      #     Write-Host "File created successfully"
+      #     Get-Content -Path "test.ps1"'
           
-          az vm run-command invoke \
-            --command-id RunPowerShellScript \
-            --name "${{ github.event.inputs.vm_name }}" \
-            --resource-group "${{ github.event.inputs.resource_group }}" \
-            --scripts "$SCRIPT_CONTENT" 
-      
-      - name: Run PowerShell script on Azure VM
-        run: |
-          az vm run-command invoke \
-            --name "${{ github.event.inputs.vm_name }}" \
-            --resource-group "${{ github.event.inputs.resource_group }}" \
-            --command-id RunPowerShellScript \
-            --scripts "cd C:\\Temp\\EdFi.Suite3.RestApi.Databases.Standard; powershell.exe -ExecutionPolicy Bypass -Command \"Initialize-DeploymentEnvironment\""
-            - name: Import PowerShell Module on Azure VM
-            run: |
-              az vm run-command invoke \
-                --name "${{ github.event.inputs.vm_name }}" \
-                --resource-group "${{ github.event.inputs.resource_group }}" \
-                --command-id RunPowerShellScript \
-                --scripts "cd C:\\Temp\\EdFi.Suite3.RestApi.Databases.Standard; powershell.exe -ExecutionPolicy Bypass -Command \"Import-Module .\\Deployment.psm1\""
-          
-      - name: Initialize Deployment Environment on Azure VM
+      #     az vm run-command invoke \
+      #       --command-id RunPowerShellScript \
+      #       --name "${{ github.event.inputs.vm_name }}" \
+      #       --resource-group "${{ github.event.inputs.resource_group }}" \
+      #       --scripts "$SCRIPT_CONTENT" 
+
+      - name: Import Module and Initialize Deployment Environment on Azure VM
         run: |
           az vm run-command invoke \
             --name "${{ github.event.inputs.vm_name }}" \
             --resource-group "${{ github.event.inputs.resource_group }}" \
             --command-id RunPowerShellScript \
-            --scripts "cd C:\\Temp\\EdFi.Suite3.RestApi.Databases.Standard; powershell.exe -ExecutionPolicy Bypass -Command \"Initialize-DeploymentEnvironment\""
+            --scripts "cd C:\\Temp\\EdFi.Suite3.RestApi.Databases.Standard; powershell.exe -ExecutionPolicy Bypass -Command \"Import-Module .\\Deployment.psm1; Initialize-DeploymentEnvironment\""

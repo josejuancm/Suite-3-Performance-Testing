@@ -50,3 +50,11 @@ jobs:
             --name "${{ github.event.inputs.vm_name }}" \
             --resource-group "${{ github.event.inputs.resource_group }}" \
             --scripts "$SCRIPT_CONTENT" 
+
+      - name: Run PowerShell script on Azure VM
+        run: |
+          az vm run-command invoke \
+            --name "${{ github.event.inputs.vm_name }}" \
+            --resource-group "${{ github.event.inputs.resource_group }}" \
+            --command-id RunPowerShellScript \
+            --scripts "Start-Process -FilePath 'powershell.exe' -ArgumentList '-ExecutionPolicy Bypass -File C:\\Temp\\EdFi.Suite3.RestApi.Databases.Standard\\test.ps1' -Verb RunAs"

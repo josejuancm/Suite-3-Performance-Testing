@@ -58,5 +58,7 @@ jobs:
           username: exampleadmin
           password: Password1234!
           port: 22
-          script: |
-            powershell.exe -Command "Start-Process -FilePath 'C:\\Temp\\EdFi.Suite3.RestApi.Databases.Standard\\test.ps1' -ArgumentList '-ExecutionPolicy Bypass' -Verb RunAs"
+          script: powershell.exe -Command "Start-Process -FilePath 'C:\\Temp\\EdFi.Suite3.RestApi.Databases.Standard\\test.ps1' -ArgumentList '-ExecutionPolicy Bypass' -Verb RunAs"
+          timeout: 60s
+          command_timeout: 20m
+          debug: true

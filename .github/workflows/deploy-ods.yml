@@ -57,5 +57,4 @@ jobs:
             --name "${{ github.event.inputs.vm_name }}" \
             --resource-group "${{ github.event.inputs.resource_group }}" \
             --command-id RunPowerShellScript \
-            --scripts "cd C:\\Temp\\EdFi.Suite3.RestApi.Databases.Standard; powershell.exe -ExecutionPolicy Bypass -Command \"Start-Transcript -Path C:\\Temp\\deployment_log.txt; Import-Module .\\Deployment.psm1; Initialize-DeploymentEnvironment; Stop-Transcript\""
-            --timeout 600
+            --scripts "cd C:\\Temp\\EdFi.Suite3.RestApi.Databases.Standard; Start-Process powershell.exe -ArgumentList '-ExecutionPolicy Bypass -Command \"Start-Transcript -Path C:\\Temp\\deployment_log.txt; Import-Module .\\Deployment.psm1; Initialize-DeploymentEnvironment; Stop-Transcript\"' -Verb RunAs"

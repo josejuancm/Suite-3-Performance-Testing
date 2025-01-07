@@ -33,43 +33,20 @@ jobs:
         with:
           creds: '{"clientId":"${{ env.ARM_CLIENT_ID }}","clientSecret":"${{ env.ARM_CLIENT_SECRET }}","subscriptionId":"${{ env.ARM_SUBSCRIPTION_ID }}","tenantId":"${{ env.ARM_TENANT_ID }}"}'
 
-      # - name: Run Deployment Commands
-      #   run: |
-      #     SCRIPT_CONTENT='
-      #     Set-Location "C:\Temp\EdFi.Suite3.RestApi.Databases.Standard"
+      - name: Run Deployment Commands
+        run: |
+          SCRIPT_CONTENT='
+          Set-Location "C:\Temp\EdFi.Suite3.RestApi.Databases.Standard"
           
-      #     Write-Host "Creating ps1 file..."
-      #     "Import-Module .\Deployment.psm1" | Out-File -FilePath "test.ps1"
-      #     "Initialize-DeploymentEnvironment" | Out-File -FilePath "test.ps1" -Append
+          Write-Host "Creating ps1 file..."
+          "Import-Module .\Deployment.psm1" | Out-File -FilePath "dbs_installation.ps1"
+          "Initialize-DeploymentEnvironment" | Out-File -FilePath "dbs_installation.ps1" -Append
           
-      #     Write-Host "File created successfully"
-      #     Get-Content -Path "test.ps1"'
+          Write-Host "File created successfully"
+          Get-Content -Path "dbs_installation.ps1"'
           
-      #     az vm run-command invoke \
-      #       --command-id RunPowerShellScript \
-      #       --name "${{ github.event.inputs.vm_name }}" \
-      #       --resource-group "${{ github.event.inputs.resource_group }}" \
-      #       --scripts "$SCRIPT_CONTENT" 
-
-      # - name: Import Module and Initialize Deployment Environment on Azure VM
-      #   run: |
-      #     az vm run-command invoke \
-      #       --name "${{ github.event.inputs.vm_name }}" \
-      #       --resource-group "${{ github.event.inputs.resource_group }}" \
-      #       --command-id RunPowerShellScript \
-      #       --scripts "cd C:\\Temp\\EdFi.Suite3.RestApi.Databases.Standard; Start-Process powershell.exe -ArgumentList '-ExecutionPolicy Bypass -Command \"Start-Transcript -Path C:\\Temp\\deployment_log.txt; Import-Module .\\Deployment.psm1; Initialize-DeploymentEnvironment; Stop-Transcript\"' -Verb RunAs"
-      #       --scripts "cd C:\\Temp\\EdFi.Suite3.RestApi.Databases.Standard; powershell.exe -ExecutionPolicy Bypass -Command \"\$Password = ConvertTo-SecureString -String 'Passwrod1234!' -AsPlainText -Force; \$Credential = New-Object System.Management.Automation.PSCredential ('exampleadmin', \$Password); Start-Process powershell.exe -ArgumentList '-ExecutionPolicy Bypass -Command `"Import-Module .\\Deployment.psm1; Initialize-DeploymentEnvironment`"" -Credential \$Credential\""
-      
-      - name: Execute PowerShell Commands on Azure VM
-        uses: appleboy/ssh-action@v0.1.8
-        with:
-          host: 40.83.143.183
-          username: exampleadmin
-          password: Passwrod1234!
-          port: 22
-          script: |
-            # Change to the target directory
-            cd C:\\Temp\\EdFi.Suite3.RestApi.Databases.Standard
-            
-            # Import the PowerShell module and initialize
-            powershell.exe -ExecutionPolicy Bypass -Command "Import-Module .\Deployment.psm1; Initialize-DeploymentEnvironment"
+          az vm run-command invoke \
+            --command-id RunPowerShellScript \
+            --name "${{ github.event.inputs.vm_name }}" \
+            --resource-group "${{ github.event.inputs.resource_group }}" \
+            --scripts "$SCRIPT_CONTENT" 

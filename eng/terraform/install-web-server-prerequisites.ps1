@@ -141,6 +141,19 @@ function Install-DotNetHosting {
         Write-Host ".NET 8.0 Hosting Bundle installed successfully."
     }
 
+    # Install URL Rewrite Module 2
+    Write-Host "Installing IIS URL Rewrite Module 2..."
+    choco install urlrewrite @common_args
+
+    # Check if URL Rewrite Module was installed successfully
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Installation of IIS URL Rewrite Module 2 failed."
+        Stop-Transcript
+        exit $LASTEXITCODE
+    } else {
+        Write-Host "IIS URL Rewrite Module 2 installed successfully."
+    }
+
     # Refresh environment variables
     & refreshenv
 

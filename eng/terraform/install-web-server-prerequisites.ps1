@@ -127,17 +127,6 @@ function Install-DotNetHosting {
 
     Write-Host "IIS installation completed successfully."
 
-    # Uninstall ASP.NET Core 6.0.35
-    Write-Host "Uninstalling Microsoft.AspNetCore.App 6.0.35..."
-    dotnet-core-uninstall remove --runtime aspnetcore --version 6.0.35 --force
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "Failed to uninstall Microsoft.AspNetCore.App 6.0.35"
-        Stop-Transcript
-        exit $LASTEXITCODE
-    } else {
-        Write-Host "Microsoft.AspNetCore.App 6.0.35 uninstalled successfully."
-    }
-
     # Install .NET 8.0 Hosting Bundle via Chocolatey
     Write-Host "Installing .NET 8.0 Hosting Bundle..."
     $common_args = @('-y', '--no-progress')
@@ -158,6 +147,36 @@ function Install-DotNetHosting {
     Stop-Transcript
 }
 
+function Uninstall-AspNetCore6 {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $True)]
+        [string] $LogFile
+    )
+
+    Start-Transcript -Path $LogFile -Append
+
+    Write-Host "Installing dotnet-core-uninstall tool..."
+    &choco install dotnet-core-uninstall @common_args
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Failed to install dotnet-core-uninstall tool"
+        Stop-Transcript
+        exit $LASTEXITCODE
+    }
+    Write-Host "dotnet-core-uninstall tool installed successfully."
+
+    Write-Host "Uninstalling Microsoft.AspNetCore.App 6.0.35..."
+    dotnet-core-uninstall remove --runtime aspnetcore --version 6.0.35 --force
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Failed to uninstall Microsoft.AspNetCore.App 6.0.35"
+        Stop-Transcript
+        exit $LASTEXITCODE
+    }
+    Write-Host "Microsoft.AspNetCore.App 6.0.35 uninstalled successfully."
+
+    Stop-Transcript
+}
+
 ###### Run
 Set-NetFirewallProfile -Enabled False
 $ConfirmPreference="high"
@@ -169,15 +188,8 @@ Install-Choco
 Install-PowerShellTools
 $applicationSetupLog = "$PSScriptRoot/application-setup.log"
 
-# Install dotnet-core-uninstall tool
-Write-Host "Installing dotnet-core-uninstall tool..."
-&choco install dotnet-core-uninstall @common_args
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "Failed to install dotnet-core-uninstall tool"
-    exit $LASTEXITCODE
-} else {
-    Write-Host "dotnet-core-uninstall tool installed successfully."
-}
+# Uninstall ASP.NET Core 6.0.35
+Uninstall-AspNetCore6 -LogFile $applicationSetupLog
 
 Install-DotNetHosting -LogFile $applicationSetupLog
 &choco install vcredist140 @common_args

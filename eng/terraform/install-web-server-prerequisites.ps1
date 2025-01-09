@@ -129,6 +129,15 @@ function Install-DotNetHosting {
 
     # Install .NET 8.0 Hosting Bundle via Chocolatey
     Write-Host "Installing .NET 8.0 Hosting Bundle..."
+
+    # First install the .NET Core Uninstall Tool
+    Write-Host "Installing .NET Core Uninstall Tool..."
+    choco install dotnet-core-uninstall @common_args
+
+    # Uninstall ASP.NET Core 6.0.35
+    Write-Host "Uninstalling ASP.NET Core 6.0.35..."
+    dotnet-core-uninstall remove --aspnet-runtime 6.0.35 --force --yes
+
     $common_args = @('-y', '--no-progress')
     choco install dotnet-8.0-windowshosting @common_args
 
@@ -147,36 +156,6 @@ function Install-DotNetHosting {
     Stop-Transcript
 }
 
-function Uninstall-AspNetCore6 {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory = $True)]
-        [string] $LogFile
-    )
-
-    Start-Transcript -Path $LogFile -Append
-
-    Write-Host "Installing dotnet-core-uninstall tool..."
-    &choco install dotnet-core-uninstall @common_args
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "Failed to install dotnet-core-uninstall tool"
-        Stop-Transcript
-        exit $LASTEXITCODE
-    }
-    Write-Host "dotnet-core-uninstall tool installed successfully."
-
-    Write-Host "Uninstalling Microsoft.AspNetCore.App 6.0.35..."
-    dotnet-core-uninstall remove --runtime aspnetcore --version 6.0.35 --force
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "Failed to uninstall Microsoft.AspNetCore.App 6.0.35"
-        Stop-Transcript
-        exit $LASTEXITCODE
-    }
-    Write-Host "Microsoft.AspNetCore.App 6.0.35 uninstalled successfully."
-
-    Stop-Transcript
-}
-
 ###### Run
 Set-NetFirewallProfile -Enabled False
 $ConfirmPreference="high"
@@ -187,10 +166,6 @@ Enable-LongFileNames
 Install-Choco
 Install-PowerShellTools
 $applicationSetupLog = "$PSScriptRoot/application-setup.log"
-
-# Uninstall ASP.NET Core 6.0.35
-Uninstall-AspNetCore6 -LogFile $applicationSetupLog
-
 Install-DotNetHosting -LogFile $applicationSetupLog
 &choco install vcredist140 @common_args
 

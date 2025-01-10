@@ -127,17 +127,31 @@ function Install-DotNetHosting {
 
     Write-Host "IIS installation completed successfully."
 
-    # Uninstall ASP.NET Core 6.0.35
-    Write-Host "Uninstalling ASP.NET Core 6.0.35..."
-    $runtimePath = "C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App\6.0.35"
-    if (Test-Path $runtimePath) {
+    # Uninstall ASP.NET Core 6.0.35 and .NET Core 6.0.35
+    Write-Host "Uninstalling ASP.NET Core 6.0.35 and .NET Core 6.0.35..."
+    
+    # Stop all websites and app pools to prevent file locks
+    Stop-Website -Name * 
+    Stop-WebAppPool -Name *
+    
+    # Remove ASP.NET Core 6.0.35
+    $aspNetRuntimePath = "C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App\6.0.35"
+    if (Test-Path $aspNetRuntimePath) {
         Write-Host "Removing ASP.NET Core 6.0.35 runtime..."
-        Stop-Website -Name * 
-        Stop-WebAppPool -Name *
-        Remove-Item -Path $runtimePath -Recurse -Force
+        Remove-Item -Path $aspNetRuntimePath -Recurse -Force
         Write-Host "ASP.NET Core 6.0.35 runtime removed successfully."
     } else {
         Write-Host "ASP.NET Core 6.0.35 runtime not found."
+    }
+
+    # Remove .NET Core 6.0.35
+    $netCorePath = "C:\Program Files\dotnet\shared\Microsoft.NETCore.App\6.0.35"
+    if (Test-Path $netCorePath) {
+        Write-Host "Removing .NET Core 6.0.35 runtime..."
+        Remove-Item -Path $netCorePath -Recurse -Force
+        Write-Host ".NET Core 6.0.35 runtime removed successfully."
+    } else {
+        Write-Host ".NET Core 6.0.35 runtime not found."
     }
 
     # Install .NET 8.0 Hosting Bundle via Chocolatey

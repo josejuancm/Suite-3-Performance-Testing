@@ -127,30 +127,45 @@ function Install-DotNetHosting {
 
     Write-Host "IIS installation completed successfully."
 
-    # Uninstall ASP.NET Core 6.0.35
-    Write-Host "Uninstalling ASP.NET Core 6.0.35..."
-    $aspNetRuntimePath = "C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App\6.0.35"
-    if (Test-Path $aspNetRuntimePath) {
-        Write-Host "Removing ASP.NET Core 6.0.35 runtime..."
-        Stop-Website -Name * 
-        Stop-WebAppPool -Name *
-        Remove-Item -Path $aspNetRuntimePath -Recurse -Force
-        Write-Host "ASP.NET Core 6.0.35 runtime removed successfully."
-    } else {
-        Write-Host "ASP.NET Core 6.0.35 runtime not found."
+    # Stop IIS services before runtime modifications
+    Write-Host "Stopping IIS services..."
+    Stop-Service -Name W3SVC -Force
+    Stop-Website -Name * 
+    Stop-WebAppPool -Name *
+    
+    # List current runtimes for logging
+    Write-Host "Current installed runtimes:"
+    dotnet --list-runtimes
+    
+    # Try to remove .NET 6.0.35 runtimes using SDK
+    Write-Host "Attempting to remove .NET 6.0.35 runtimes..."
+    try {
+        # Remove the hosting bundle first
+        Start-Process "msiexec.exe" -ArgumentList "/x {B0FE5175-C8B9-4FD5-9D60-0B4ABD995BEF} /quiet /norestart" -Wait
+        Write-Host "Hosting bundle removal attempted"
+        
+        # Force a cleanup of the runtime files if they still exist
+        $runtimePaths = @(
+            "C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App\6.0.35",
+            "C:\Program Files\dotnet\shared\Microsoft.NETCore.App\6.0.35"
+        )
+        
+        foreach ($path in $runtimePaths) {
+            if (Test-Path $path) {
+                Write-Host "Cleaning up runtime at: $path"
+                Remove-Item -Path $path -Recurse -Force -ErrorAction SilentlyContinue
+            }
+        }
     }
-
-    # Uninstall .NET Core 6.0.35
-    Write-Host "Uninstalling .NET Core 6.0.35..."
-    $netCorePath = "C:\Program Files\dotnet\shared\Microsoft.NETCore.App\6.0.35"
-    if (Test-Path $netCorePath) {
-        Write-Host "Removing .NET Core 6.0.35 runtime..."
-        Remove-Item -Path $netCorePath -Recurse -Force
-        Write-Host ".NET Core 6.0.35 runtime removed successfully."
-    } else {
-        Write-Host ".NET Core 6.0.35 runtime not found."
+    catch {
+        Write-Host "Warning: Error during runtime removal: $_"
+        # Continue with installation even if removal has issues
     }
-
+    
+    # Restart IIS services
+    Write-Host "Starting IIS services..."
+    Start-Service -Name W3SVC
+    
     # Install .NET 8.0 Hosting Bundle via Chocolatey
     Write-Host "Installing .NET 8.0 Hosting Bundle..."
     $common_args = @('-y', '--no-progress')

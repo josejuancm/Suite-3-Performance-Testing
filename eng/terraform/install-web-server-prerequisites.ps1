@@ -77,6 +77,40 @@ function Install-Choco {
     return Get-Command "choco.exe" -ErrorAction SilentlyContinue
 }
 
+function Uninstall-AspNetCore6035 {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $True)]
+        [string] $LogFile
+    )
+
+    Start-Transcript -Path $LogFile -Append
+
+    Write-Host "Uninstalling ASP.NET Core 6.0.35..."
+    $runtimePath = "C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App\6.0.35"
+    
+    if (Test-Path $runtimePath) {
+        Write-Host "Removing ASP.NET Core 6.0.35 runtime..."
+        # Stop all websites and app pools before removal
+        Stop-Website -Name * 
+        Stop-WebAppPool -Name *
+        
+        try {
+            Remove-Item -Path $runtimePath -Recurse -Force
+            Write-Host "ASP.NET Core 6.0.35 runtime removed successfully."
+        }
+        catch {
+            Write-Error "Failed to remove ASP.NET Core 6.0.35: $_"
+            Stop-Transcript
+            throw
+        }
+    } else {
+        Write-Host "ASP.NET Core 6.0.35 runtime not found."
+    }
+
+    Stop-Transcript
+}
+
 function Install-DotNetHosting {
     [CmdletBinding()]
     param (
@@ -127,19 +161,6 @@ function Install-DotNetHosting {
 
     Write-Host "IIS installation completed successfully."
 
-    # Uninstall ASP.NET Core 6.0.35
-    Write-Host "Uninstalling ASP.NET Core 6.0.35..."
-    $runtimePath = "C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App\6.0.35"
-    if (Test-Path $runtimePath) {
-        Write-Host "Removing ASP.NET Core 6.0.35 runtime..."
-        Stop-Website -Name * 
-        Stop-WebAppPool -Name *
-        Remove-Item -Path $runtimePath -Recurse -Force
-        Write-Host "ASP.NET Core 6.0.35 runtime removed successfully."
-    } else {
-        Write-Host "ASP.NET Core 6.0.35 runtime not found."
-    }
-
     # Install .NET 8.0 Hosting Bundle via Chocolatey
     Write-Host "Installing .NET 8.0 Hosting Bundle..."
     $common_args = @('-y', '--no-progress')
@@ -169,6 +190,12 @@ Invoke-RefreshPath
 Enable-LongFileNames
 Install-Choco
 Install-PowerShellTools
+
+# First uninstall ASP.NET Core 6.0.35
+$uninstallLog = "$PSScriptRoot/uninstall-aspnet-6035.log"
+Uninstall-AspNetCore6035 -LogFile $uninstallLog
+
+# Then proceed with the rest of the installation
 $applicationSetupLog = "$PSScriptRoot/application-setup.log"
 Install-DotNetHosting -LogFile $applicationSetupLog
 &choco install vcredist140 @common_args

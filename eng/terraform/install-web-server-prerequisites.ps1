@@ -137,25 +137,24 @@ function Install-DotNetHosting {
     Write-Host "Current installed runtimes:"
     dotnet --list-runtimes
     
-    # Try to remove .NET 6.0.35 runtimes using SDK
-    Write-Host "Attempting to remove .NET 6.0.35 runtimes..."
+    # Uninstall .NET Core 6.0.35 components
+    Write-Host "Attempting to remove .NET 6.0.35 components..."
     try {
-        # Remove the hosting bundle first
-        Start-Process "msiexec.exe" -ArgumentList "/x {B0FE5175-C8B9-4FD5-9D60-0B4ABD995BEF} /quiet /norestart" -Wait
-        Write-Host "Hosting bundle removal attempted"
-        
-        # Force a cleanup of the runtime files if they still exist
-        $runtimePaths = @(
-            "C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App\6.0.35",
-            "C:\Program Files\dotnet\shared\Microsoft.NETCore.App\6.0.35"
-        )
-        
-        foreach ($path in $runtimePaths) {
-            if (Test-Path $path) {
-                Write-Host "Cleaning up runtime at: $path"
-                Remove-Item -Path $path -Recurse -Force -ErrorAction SilentlyContinue
-            }
+        # Get all installed packages that match .NET 6.0.35
+        $packages = Get-WmiObject -Class Win32_Product | Where-Object { 
+            $_.Name -like "*Microsoft ASP.NET Core 6.0.35*" -or 
+            $_.Name -like "*Microsoft .NET Runtime 6.0.35*" -or
+            $_.Name -like "*Microsoft .NET Host FX Resolver 6.0.35*" -or
+            $_.Name -like "*Microsoft ASP.NET Core Shared Framework 6.0.35*"
         }
+        
+        # Uninstall each package
+        foreach ($package in $packages) {
+            Write-Host "Uninstalling: $($package.Name)"
+            $package.Uninstall()
+        }
+        
+        Write-Host ".NET 6.0.35 components removal completed"
     }
     catch {
         Write-Host "Warning: Error during runtime removal: $_"

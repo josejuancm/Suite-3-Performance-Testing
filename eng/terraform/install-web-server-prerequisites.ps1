@@ -86,28 +86,29 @@ function Uninstall-AspNetCore6035 {
 
     Start-Transcript -Path $LogFile -Append
 
-    Write-Host "Uninstalling ASP.NET Core 6.0.35..."
-    $runtimePath = "C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App\6.0.35"
+    Write-Host "Uninstalling .NET Core 6.0.35 runtimes..."
     
-    if (Test-Path $runtimePath) {
-        Write-Host "Removing ASP.NET Core 6.0.35 runtime..."
-        # Stop all websites and app pools before removal
-        Stop-Website -Name * 
-        Stop-WebAppPool -Name *
-        
-        try {
-            Remove-Item -Path $runtimePath -Recurse -Force
-            Write-Host "ASP.NET Core 6.0.35 runtime removed successfully."
+    $runtimePaths = @(
+        "C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App\6.0.35",
+        "C:\Program Files\dotnet\shared\Microsoft.NETCore.App\6.0.35"
+    )
+    
+    foreach ($path in $runtimePaths) {
+        if (Test-Path $path) {
+            Write-Host "Removing runtime at: $path"
+            try {
+                Remove-Item -Path $path -Recurse -Force
+                Write-Host "Successfully removed: $path"
+            }
+            catch {
+                Write-Error "Failed to remove $path : $_"
+            }
+        } else {
+            Write-Host "Runtime path not found: $path"
         }
-        catch {
-            Write-Error "Failed to remove ASP.NET Core 6.0.35: $_"
-            Stop-Transcript
-            throw
-        }
-    } else {
-        Write-Host "ASP.NET Core 6.0.35 runtime not found."
     }
 
+    Write-Host "Uninstall operation completed."
     Stop-Transcript
 }
 

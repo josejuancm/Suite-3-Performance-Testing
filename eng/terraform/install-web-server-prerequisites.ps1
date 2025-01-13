@@ -127,88 +127,17 @@ function Install-DotNetHosting {
 
     Write-Host "IIS installation completed successfully."
 
-    # Stop IIS services before runtime modifications
-    Write-Host "Stopping IIS services..."
-    Stop-Service -Name W3SVC -Force
-    Stop-Website -Name * 
-    Stop-WebAppPool -Name *
-    
-    # List current runtimes for logging
-    Write-Host "Current installed runtimes:"
-    dotnet --list-runtimes
-    
-    # Uninstall .NET Core 6.0.35 components using direct msiexec commands
-    Write-Host "Attempting to remove .NET 6.0.35 components..."
-    try {
-        # Get registry uninstall strings for .NET 6.0.35 components
-        $uninstallKeys = @(
-            "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
-            "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"
-        )
-        
-        $netComponents = Get-ItemProperty $uninstallKeys | 
-            Where-Object { $_.DisplayName -like "*Microsoft.AspNetCore.App 6.0.35*" -or 
-                         $_.DisplayName -like "*Microsoft.NETCore.App 6.0.35*" }
-        
-        foreach ($component in $netComponents) {
-            if ($component.UninstallString) {
-                $uninstallString = $component.UninstallString
-                if ($uninstallString -match "{[0-9A-F-]+}") {
-                    $productCode = $matches[0]
-                    Write-Host "Uninstalling component with product code: $productCode"
-                    Start-Process "msiexec.exe" -ArgumentList "/x $productCode /quiet /norestart" -Wait -NoNewWindow
-                }
-            }
-        }
-
-        # Force removal of runtime directories if they still exist
-        $runtimePaths = @(
-            "C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App\6.0.35",
-            "C:\Program Files\dotnet\shared\Microsoft.NETCore.App\6.0.35"
-        )
-        
-        foreach ($path in $runtimePaths) {
-            if (Test-Path $path) {
-                Write-Host "Removing runtime directory: $path"
-                Remove-Item -Path $path -Recurse -Force -ErrorAction SilentlyContinue
-                if (Test-Path $path) {
-                    Write-Host "Failed to remove $path - will try after IIS restart"
-                }
-            }
-        }
-
-        # Try specific known product codes as fallback
-        $knownProductCodes = @(
-            "{7B8FD6D3-D336-4E60-9B0D-F0DAFAC3E504}", # ASP.NET Core 6.0 Runtime
-            "{B8FD6D35-D336-4E60-9B0D-F0DAFAC3E504}"  # .NET Runtime 6.0
-        )
-
-        foreach ($productCode in $knownProductCodes) {
-            Write-Host "Attempting uninstall of product code: $productCode"
-            Start-Process "msiexec.exe" -ArgumentList "/x $productCode /quiet /norestart" -Wait -NoNewWindow
-        }
-
-        Write-Host ".NET 6.0.35 components removal attempted"
-    }
-    catch {
-        Write-Host "Warning: Error during runtime removal: $_"
-        # Continue with installation even if removal has issues
-    }
-    
-    # Restart IIS services
-    Write-Host "Starting IIS services..."
-    Start-Service -Name W3SVC
-    
-    # Double-check and force remove directories after IIS restart if they still exist
-    foreach ($path in $runtimePaths) {
-        if (Test-Path $path) {
-            Write-Host "Final attempt to remove: $path"
-            Remove-Item -Path $path -Recurse -Force -ErrorAction SilentlyContinue
-        }
-    }
-    
     # Install .NET 8.0 Hosting Bundle via Chocolatey
     Write-Host "Installing .NET 8.0 Hosting Bundle..."
+
+    # First install the .NET Core Uninstall Tool
+    Write-Host "Installing .NET Core Uninstall Tool..."
+    choco install dotnet-core-uninstall @common_args
+
+    # Uninstall ASP.NET Core 6.0.35
+    Write-Host "Uninstalling ASP.NET Core 6.0.35..."
+    dotnet-core-uninstall remove --aspnet-runtime 6.0.35 --force --yes
+
     $common_args = @('-y', '--no-progress')
     choco install dotnet-8.0-windowshosting @common_args
 

@@ -127,17 +127,21 @@ function Install-DotNetHosting {
 
     Write-Host "IIS installation completed successfully."
 
-    # Install .NET 8.0 Hosting Bundle via Chocolatey
-    Write-Host "Installing .NET 8.0 Hosting Bundle..."
-
-    # First install the .NET Core Uninstall Tool
-    Write-Host "Installing .NET Core Uninstall Tool..."
-    choco install dotnet-core-uninstall @common_args
-
     # Uninstall ASP.NET Core 6.0.35
     Write-Host "Uninstalling ASP.NET Core 6.0.35..."
-    dotnet-core-uninstall remove --aspnet-runtime 6.0.35 --force --yes
+    $runtimePath = "C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App\6.0.35"
+    if (Test-Path $runtimePath) {
+        Write-Host "Removing ASP.NET Core 6.0.35 runtime..."
+        Stop-Website -Name * 
+        Stop-WebAppPool -Name *
+        Remove-Item -Path $runtimePath -Recurse -Force
+        Write-Host "ASP.NET Core 6.0.35 runtime removed successfully."
+    } else {
+        Write-Host "ASP.NET Core 6.0.35 runtime not found."
+    }
 
+    # Install .NET 8.0 Hosting Bundle via Chocolatey
+    Write-Host "Installing .NET 8.0 Hosting Bundle..."
     $common_args = @('-y', '--no-progress')
     choco install dotnet-8.0-windowshosting @common_args
 

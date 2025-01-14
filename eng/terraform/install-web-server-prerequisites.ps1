@@ -77,67 +77,6 @@ function Install-Choco {
     return Get-Command "choco.exe" -ErrorAction SilentlyContinue
 }
 
-function Uninstall-AspNetCore6035 {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory = $True)]
-        [string] $LogFile
-    )
-
-    Start-Transcript -Path $LogFile -Append
-
-    Write-Host "Uninstalling .NET Core 6.0.35 runtimes..."
-    
-    $runtimePaths = @(
-        "C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App\6.0.35",
-        "C:\Program Files\dotnet\shared\Microsoft.NETCore.App\6.0.35"
-    )
-    
-    foreach ($path in $runtimePaths) {
-        if (Test-Path $path) {
-            Write-Host "Removing runtime at: $path"
-            try {
-                # Try to stop any processes that might be using the runtime
-                Get-Process | Where-Object {$_.Path -like "$path*"} | Stop-Process -Force -ErrorAction SilentlyContinue
-                
-                # Add a small delay to ensure processes are stopped
-                Start-Sleep -Seconds 2
-                
-                # Try multiple times to remove the directory
-                $maxAttempts = 3
-                $attempt = 1
-                $success = $false
-                
-                while (-not $success -and $attempt -le $maxAttempts) {
-                    try {
-                        Remove-Item -Path $path -Recurse -Force -ErrorAction Stop
-                        $success = $true
-                        Write-Host "Successfully removed: $path"
-                    }
-                    catch {
-                        Write-Host "Attempt $attempt of $maxAttempts failed to remove $path"
-                        if ($attempt -eq $maxAttempts) {
-                            Write-Warning "Failed to remove $path after $maxAttempts attempts: $_"
-                        }
-                        Start-Sleep -Seconds 2
-                        $attempt++
-                    }
-                }
-            }
-            catch {
-                Write-Warning "Error during runtime removal process: $_"
-            }
-        } else {
-            Write-Host "Runtime path not found: $path"
-        }
-    }
-
-    Write-Host "Uninstall operation completed."
-    Stop-Transcript
-    
-    return $true
-}
-
 function Install-DotNetHosting {
     [CmdletBinding()]
     param (
@@ -209,29 +148,17 @@ function Install-DotNetHosting {
 }
 
 ###### Run
-try {
-    Set-NetFirewallProfile -Enabled False
-    $ConfirmPreference="high"
-    $ErrorActionPreference = "Continue"
-    
-    # Create a log directory if it doesn't exist
-    $logDir = "$PSScriptRoot\logs"
-    if (-not (Test-Path $logDir)) {
-        New-Item -ItemType Directory -Path $logDir -Force | Out-Null
-    }
+Set-NetFirewallProfile -Enabled False
+$ConfirmPreference="high"
+$ErrorActionPreference = "Stop"
+Set-TLS12Support
+Invoke-RefreshPath
+Enable-LongFileNames
+Install-Choco
+Install-PowerShellTools
+$applicationSetupLog = "$PSScriptRoot/application-setup.log"
+Install-DotNetHosting -LogFile $applicationSetupLog
+&choco install vcredist140 @common_args
 
-    # Execute uninstall operation
-    $uninstallLog = "$logDir\uninstall-aspnet-6035.log"
-    $result = Uninstall-AspNetCore6035 -LogFile $uninstallLog
-    
-    Write-Host "Script completed successfully"
-    exit 0
-}
-catch {
-    $errorMessage = $_.Exception.Message
-    Write-Warning "An error occurred during script execution: $errorMessage"
-    # Write to error log
-    $errorMessage | Out-File "$logDir\error.log" -Append
-    # Still exit with 0 to prevent VM extension failure
-    exit 0
-}
+# Restart the computer to complete the installation
+Restart-Computer -Force

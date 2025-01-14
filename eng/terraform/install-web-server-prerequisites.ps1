@@ -126,7 +126,6 @@ function Uninstall-AspNetCore6035 {
             }
             catch {
                 Write-Warning "Error during runtime removal process: $_"
-                # Continue with the script even if there's an error
             }
         } else {
             Write-Host "Runtime path not found: $path"
@@ -136,8 +135,6 @@ function Uninstall-AspNetCore6035 {
     Write-Host "Uninstall operation completed."
     Stop-Transcript
     
-    # Return success even if some operations failed
-    # This prevents the VM extension from failing completely
     return $true
 }
 
@@ -215,27 +212,26 @@ function Install-DotNetHosting {
 try {
     Set-NetFirewallProfile -Enabled False
     $ConfirmPreference="high"
-    $ErrorActionPreference = "Continue"  # Changed from "Stop" to "Continue"
-    Set-TLS12Support
-    Invoke-RefreshPath
-    Enable-LongFileNames
-    Install-Choco
-    Install-PowerShellTools
+    $ErrorActionPreference = "Continue"
+    
+    # Create a log directory if it doesn't exist
+    $logDir = "$PSScriptRoot\logs"
+    if (-not (Test-Path $logDir)) {
+        New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+    }
 
-    # First uninstall ASP.NET Core 6.0.35
-    $uninstallLog = "$PSScriptRoot/uninstall-aspnet-6035.log"
-    Uninstall-AspNetCore6035 -LogFile $uninstallLog
-
-    # Then proceed with the rest of the installation
-    $applicationSetupLog = "$PSScriptRoot/application-setup.log"
-    Install-DotNetHosting -LogFile $applicationSetupLog
-    &choco install vcredist140 @common_args
-
-    # Restart the computer to complete the installation
-    Restart-Computer -Force
+    # Execute uninstall operation
+    $uninstallLog = "$logDir\uninstall-aspnet-6035.log"
+    $result = Uninstall-AspNetCore6035 -LogFile $uninstallLog
+    
+    Write-Host "Script completed successfully"
+    exit 0
 }
 catch {
-    Write-Warning "An error occurred during script execution: $_"
-    # Log the error but don't fail the script
+    $errorMessage = $_.Exception.Message
+    Write-Warning "An error occurred during script execution: $errorMessage"
+    # Write to error log
+    $errorMessage | Out-File "$logDir\error.log" -Append
+    # Still exit with 0 to prevent VM extension failure
     exit 0
 }

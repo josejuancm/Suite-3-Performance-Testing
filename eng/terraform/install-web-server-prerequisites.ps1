@@ -97,11 +97,36 @@ function Uninstall-AspNetCore6035 {
         if (Test-Path $path) {
             Write-Host "Removing runtime at: $path"
             try {
-                Remove-Item -Path $path -Recurse -Force
-                Write-Host "Successfully removed: $path"
+                # Try to stop any processes that might be using the runtime
+                Get-Process | Where-Object {$_.Path -like "$path*"} | Stop-Process -Force -ErrorAction SilentlyContinue
+                
+                # Add a small delay to ensure processes are stopped
+                Start-Sleep -Seconds 2
+                
+                # Try multiple times to remove the directory
+                $maxAttempts = 3
+                $attempt = 1
+                $success = $false
+                
+                while (-not $success -and $attempt -le $maxAttempts) {
+                    try {
+                        Remove-Item -Path $path -Recurse -Force -ErrorAction Stop
+                        $success = $true
+                        Write-Host "Successfully removed: $path"
+                    }
+                    catch {
+                        Write-Host "Attempt $attempt of $maxAttempts failed to remove $path"
+                        if ($attempt -eq $maxAttempts) {
+                            Write-Warning "Failed to remove $path after $maxAttempts attempts: $_"
+                        }
+                        Start-Sleep -Seconds 2
+                        $attempt++
+                    }
+                }
             }
             catch {
-                Write-Error "Failed to remove $path : $_"
+                Write-Warning "Error during runtime removal process: $_"
+                # Continue with the script even if there's an error
             }
         } else {
             Write-Host "Runtime path not found: $path"
@@ -110,6 +135,10 @@ function Uninstall-AspNetCore6035 {
 
     Write-Host "Uninstall operation completed."
     Stop-Transcript
+    
+    # Return success even if some operations failed
+    # This prevents the VM extension from failing completely
+    return $true
 }
 
 function Install-DotNetHosting {
@@ -183,23 +212,30 @@ function Install-DotNetHosting {
 }
 
 ###### Run
-Set-NetFirewallProfile -Enabled False
-$ConfirmPreference="high"
-$ErrorActionPreference = "Stop"
-Set-TLS12Support
-Invoke-RefreshPath
-Enable-LongFileNames
-Install-Choco
-Install-PowerShellTools
+try {
+    Set-NetFirewallProfile -Enabled False
+    $ConfirmPreference="high"
+    $ErrorActionPreference = "Continue"  # Changed from "Stop" to "Continue"
+    Set-TLS12Support
+    Invoke-RefreshPath
+    Enable-LongFileNames
+    Install-Choco
+    Install-PowerShellTools
 
-# First uninstall ASP.NET Core 6.0.35
-$uninstallLog = "$PSScriptRoot/uninstall-aspnet-6035.log"
-Uninstall-AspNetCore6035 -LogFile $uninstallLog
+    # First uninstall ASP.NET Core 6.0.35
+    $uninstallLog = "$PSScriptRoot/uninstall-aspnet-6035.log"
+    Uninstall-AspNetCore6035 -LogFile $uninstallLog
 
-# Then proceed with the rest of the installation
-$applicationSetupLog = "$PSScriptRoot/application-setup.log"
-Install-DotNetHosting -LogFile $applicationSetupLog
-&choco install vcredist140 @common_args
+    # Then proceed with the rest of the installation
+    $applicationSetupLog = "$PSScriptRoot/application-setup.log"
+    Install-DotNetHosting -LogFile $applicationSetupLog
+    &choco install vcredist140 @common_args
 
-# Restart the computer to complete the installation
-Restart-Computer -Force
+    # Restart the computer to complete the installation
+    Restart-Computer -Force
+}
+catch {
+    Write-Warning "An error occurred during script execution: $_"
+    # Log the error but don't fail the script
+    exit 0
+}

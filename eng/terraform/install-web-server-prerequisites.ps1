@@ -156,6 +156,12 @@ Invoke-RefreshPath
 Enable-LongFileNames
 Install-Choco
 Install-PowerShellTools
+
+# Remove .NET 6.0.35 components before installing .NET 8.0
+Write-Host "Removing .NET 6.0.35 components..."
+Remove-Item -Path "C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App\6.0.35" -Recurse -Force
+Remove-Item -Path "C:\Program Files\dotnet\shared\Microsoft.NETCore.App\6.0.35" -Recurse -Force
+
 $applicationSetupLog = "$PSScriptRoot/application-setup.log"
 Install-DotNetHosting -LogFile $applicationSetupLog
 &choco install vcredist140 @common_args

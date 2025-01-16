@@ -23,6 +23,15 @@ on:
         description: "The version of EdFi.Suite3.Installer.WebApi to install"
         required: true
         default: "7.2.4"
+      db_server:
+        description: "Database server IP address"
+        required: true
+      db_username:
+        description: "Database username"
+        required: true
+      db_password:
+        description: "Database password"
+        required: true
       
 
 env:
@@ -91,5 +100,38 @@ jobs:
           az vm run-command invoke \
             --command-id RunPowerShellScript \
             --name "${{ github.event.inputs.sql_vm_name }}" \
+            --resource-group "${{ github.event.inputs.resource_group }}" \
+            --scripts "$SCRIPT_CONTENT" 
+
+      - name: Create WebApi Installation Script
+        run: |
+          SCRIPT_CONTENT='
+          Set-Location "C:\Temp\EdFi.Suite3.Installer.WebApi"
+          
+          Write-Host "Creating WebApi installation script..."
+          @"
+          Import-Module .\Install-EdFiOdsWebApi.psm1
+          `$parameters = @{
+              PackageVersion = "7.2.1201"
+              PackageName = "EdFi.Suite3.Ods.WebApi.Standard.5.1.0"
+              DbConnectionInfo = @{
+                 Engine = "SqlServer" 
+                 Server = "${{ github.event.inputs.db_server }}"
+                 Username = "${{ github.event.inputs.db_username }}"
+                 Password = "${{ github.event.inputs.db_password }}"
+                 UseIntegratedSecurity = `$false
+              }
+              IsSandbox = `$true
+              UnEncryptedConnection = `$true
+          }
+          Install-EdFiOdsWebApi @parameters
+          "@ | Out-File -FilePath "webapi_installation.ps1"
+          
+          Write-Host "File created successfully"
+          Get-Content -Path "webapi_installation.ps1"'
+          
+          az vm run-command invoke \
+            --command-id RunPowerShellScript \
+            --name "${{ github.event.inputs.web_api_vm_name }}" \
             --resource-group "${{ github.event.inputs.resource_group }}" \
             --scripts "$SCRIPT_CONTENT" 

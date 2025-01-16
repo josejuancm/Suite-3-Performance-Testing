@@ -20,6 +20,9 @@ on:
         description: "The version of EdFi.Suite3.Installer.WebApi to install"
         required: true
         default: "7.2.4"
+      second_vm_name:
+        description: "The name of the second VM for database installation"
+        required: true
 
 env:
   ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
@@ -37,7 +40,7 @@ jobs:
         with:
           creds: '{"clientId":"${{ env.ARM_CLIENT_ID }}","clientSecret":"${{ env.ARM_CLIENT_SECRET }}","subscriptionId":"${{ env.ARM_SUBSCRIPTION_ID }}","tenantId":"${{ env.ARM_TENANT_ID }}"}'
 
-      - name: Download Components
+      - name: Download Components on First VM
         run: |
           az vm run-command invoke \
             --command-id RunPowerShellScript \
@@ -49,12 +52,6 @@ jobs:
             Rename-Item -Path "C:/Temp/EdFi.Suite3.Installer.WebApi.${{ github.event.inputs.version }}.nupkg" -NewName "EdFi.Suite3.Installer.WebApi.zip"
             Expand-Archive -Path "C:/Temp/EdFi.Suite3.Installer.WebApi.zip" -DestinationPath "C:/Temp/EdFi.Suite3.Installer.WebApi" -Force
 
-            # Download and extract RestApi Databases
-            Invoke-WebRequest -Uri "https://pkgs.dev.azure.com/ed-fi-alliance/Ed-Fi-Alliance-OSS/_apis/packaging/feeds/EdFi@Release/nuget/packages/EdFi.Suite3.RestApi.Databases.Standard.5.1.0/versions/7.2.1201/content" -OutFile "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard.5.1.0.nupkg"
-            Rename-Item -Path "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard.5.1.0.nupkg" -NewName "EdFi.Suite3.RestApi.Databases.Standard.zip"
-            Expand-Archive -Path "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard.zip" -DestinationPath "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard" -Force
-            Remove-Item -Path "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard/configuration.postgreSQL.json" -Force
-
             # Download and extract SwaggerUI
             Invoke-WebRequest -Uri "https://pkgs.dev.azure.com/ed-fi-alliance/Ed-Fi-Alliance-OSS/_apis/packaging/feeds/EdFi@Release/nuget/packages/EdFi.Suite3.Installer.SwaggerUI/versions/7.2.6/content" -OutFile "C:/Temp/EdFi.Suite3.Installer.SwaggerUI.nupkg"
             Rename-Item -Path "C:/Temp/EdFi.Suite3.Installer.SwaggerUI.nupkg" -NewName "EdFi.Suite3.Installer.SwaggerUI.zip"
@@ -64,3 +61,16 @@ jobs:
             Invoke-WebRequest -Uri "https://pkgs.dev.azure.com/ed-fi-alliance/Ed-Fi-Alliance-OSS/_apis/packaging/feeds/EdFi@Release/nuget/packages/EdFi.Suite3.Installer.SandboxAdmin/versions/7.2.7/content" -OutFile "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.nupkg"
             Rename-Item -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.nupkg" -NewName "EdFi.Suite3.Installer.SandboxAdmin.zip"
             Expand-Archive -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.zip" -DestinationPath "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin" -Force'
+
+      - name: Download RestApi Databases on Second VM
+        run: |
+          az vm run-command invoke \
+            --command-id RunPowerShellScript \
+            --name "${{ github.event.inputs.second_vm_name }}" \
+            --resource-group "${{ github.event.inputs.resource_group }}" \
+            --scripts '
+            # Download and extract RestApi Databases
+            Invoke-WebRequest -Uri "https://pkgs.dev.azure.com/ed-fi-alliance/Ed-Fi-Alliance-OSS/_apis/packaging/feeds/EdFi@Release/nuget/packages/EdFi.Suite3.RestApi.Databases.Standard.5.1.0/versions/7.2.1201/content" -OutFile "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard.5.1.0.nupkg"
+            Rename-Item -Path "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard.5.1.0.nupkg" -NewName "EdFi.Suite3.RestApi.Databases.Standard.zip"
+            Expand-Archive -Path "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard.zip" -DestinationPath "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard" -Force
+            Remove-Item -Path "C:/Temp/EdFi.Suite3.RestApi.Databases.Standard/configuration.postgreSQL.json" -Force'

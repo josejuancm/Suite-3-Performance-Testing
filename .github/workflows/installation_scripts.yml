@@ -1,4 +1,4 @@
-name: Run VM Command
+name: Download packages and create installation scripts
 
 on:
   workflow_dispatch:

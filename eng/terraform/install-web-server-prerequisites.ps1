@@ -157,10 +157,10 @@ Enable-LongFileNames
 Install-Choco
 Install-PowerShellTools
 
-# Remove .NET 6.0.35 components before installing .NET 8.0
-Write-Host "Removing .NET 6.0.35 components..."
-Remove-Item -Path "C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App\6.0.35" -Recurse -Force
-Remove-Item -Path "C:\Program Files\dotnet\shared\Microsoft.NETCore.App\6.0.35" -Recurse -Force
+# Remove all existing .NET Core and ASP.NET Core components before installing .NET 8.0
+Write-Host "Removing existing .NET components..."
+Get-ChildItem -Path "C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App\" -Directory | Remove-Item -Recurse -Force
+Get-ChildItem -Path "C:\Program Files\dotnet\shared\Microsoft.NETCore.App\" -Directory | Remove-Item -Recurse -Force
 
 $applicationSetupLog = "$PSScriptRoot/application-setup.log"
 Install-DotNetHosting -LogFile $applicationSetupLog

@@ -19,10 +19,22 @@ on:
       sql_vm_name:
         description: "The name of the SQL VM"
         required: true
-      version:
+      web_api_version:
         description: "The version of EdFi.Suite3.Installer.WebApi to install"
         required: true
         default: "7.2.4"
+      db_version:
+        description: "The version of EdFi.Suite3.RestApi.Databases.Standard to install"
+        required: true
+        default: "7.2.1201"
+      swagger_version:
+        description: "The version of EdFi.Suite3.Installer.SwaggerUI to install"
+        required: true
+        default: "7.2.6"
+      sandbox_version:
+        description: "The version of EdFi.Suite3.Installer.SandboxAdmin to install"
+        required: true
+        default: "7.2.7"
       db_server:
         description: "Database server IP address"
         required: true
@@ -50,10 +62,6 @@ jobs:
         with:
           creds: '{"clientId":"${{ env.ARM_CLIENT_ID }}","clientSecret":"${{ env.ARM_CLIENT_SECRET }}","subscriptionId":"${{ env.ARM_SUBSCRIPTION_ID }}","tenantId":"${{ env.ARM_TENANT_ID }}"}'
 
-      - name: Add Azure DevOps Auth Token
-        run: |
-          echo "##vso[task.setvariable variable=SYSTEM_ACCESSTOKEN]$(az account get-access-token --query accessToken -o tsv)"
-
       - name: Download Components on Web Server VM
         run: |
           az vm run-command invoke \
@@ -66,18 +74,14 @@ jobs:
             Rename-Item -Path "C:/Temp/EdFi.Suite3.Installer.WebApi.${{ github.event.inputs.version }}.nupkg" -NewName "EdFi.Suite3.Installer.WebApi.zip"
             Expand-Archive -Path "C:/Temp/EdFi.Suite3.Installer.WebApi.zip" -DestinationPath "C:/Temp/EdFi.Suite3.Installer.WebApi" -Force
 
-            # Get latest SwaggerUI version and download it
-            $swaggerLatestVersion = (Invoke-RestMethod -Uri "https://pkgs.dev.azure.com/ed-fi-alliance/Ed-Fi-Alliance-OSS/_apis/packaging/feeds/EdFi@Release/nuget/packages/EdFi.Suite3.Installer.SwaggerUI/versions?api-version=7.0" -Headers @{Authorization = "Basic " + [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(":$env:SYSTEM_ACCESSTOKEN"))}).value | Sort-Object -Property publishDate -Descending | Select-Object -First 1 -ExpandProperty version
-            
-            Write-Host "Latest SwaggerUI version: $swaggerLatestVersion"
-            
-            Invoke-WebRequest -Uri "https://pkgs.dev.azure.com/ed-fi-alliance/Ed-Fi-Alliance-OSS/_apis/packaging/feeds/EdFi@Release/nuget/packages/EdFi.Suite3.Installer.SwaggerUI/versions/$swaggerLatestVersion/content" -OutFile "C:/Temp/EdFi.Suite3.Installer.SwaggerUI.nupkg"
-            Rename-Item -Path "C:/Temp/EdFi.Suite3.Installer.SwaggerUI.nupkg" -NewName "EdFi.Suite3.Installer.SwaggerUI.zip"
+            # Download and extract SwaggerUI
+            Invoke-WebRequest -Uri "https://pkgs.dev.azure.com/ed-fi-alliance/Ed-Fi-Alliance-OSS/_apis/packaging/feeds/EdFi@Release/nuget/packages/EdFi.Suite3.Installer.SwaggerUI/versions/${{ github.event.inputs.swagger_version }}/content" -OutFile "C:/Temp/EdFi.Suite3.Installer.SwaggerUI.${{ github.event.inputs.swagger_version }}.nupkg"
+            Rename-Item -Path "C:/Temp/EdFi.Suite3.Installer.SwaggerUI.${{ github.event.inputs.swagger_version }}.nupkg" -NewName "EdFi.Suite3.Installer.SwaggerUI.zip"
             Expand-Archive -Path "C:/Temp/EdFi.Suite3.Installer.SwaggerUI.zip" -DestinationPath "C:/Temp/EdFi.Suite3.Installer.SwaggerUI" -Force
 
             # Download and extract SandboxAdmin
-            Invoke-WebRequest -Uri "https://pkgs.dev.azure.com/ed-fi-alliance/Ed-Fi-Alliance-OSS/_apis/packaging/feeds/EdFi@Release/nuget/packages/EdFi.Suite3.Installer.SandboxAdmin/versions/7.2.7/content" -OutFile "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.nupkg"
-            Rename-Item -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.nupkg" -NewName "EdFi.Suite3.Installer.SandboxAdmin.zip"
+            Invoke-WebRequest -Uri "https://pkgs.dev.azure.com/ed-fi-alliance/Ed-Fi-Alliance-OSS/_apis/packaging/feeds/EdFi@Release/nuget/packages/EdFi.Suite3.Installer.SandboxAdmin/versions/${{ github.event.inputs.sandbox_version }}/content" -OutFile "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.${{ github.event.inputs.sandbox_version }}.nupkg"
+            Rename-Item -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.${{ github.event.inputs.sandbox_version }}.nupkg" -NewName "EdFi.Suite3.Installer.SandboxAdmin.zip"
             Expand-Archive -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.zip" -DestinationPath "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin" -Force'
 
       - name: Download RestApi Databases on SQL Server VM

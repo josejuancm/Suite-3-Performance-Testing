@@ -38,12 +38,6 @@ on:
       db_server:
         description: "Database server IP address"
         required: true
-      db_username:
-        description: "Database username"
-        required: true
-      db_password:
-        description: "Database password"
-        required: true
       
 
 env:
@@ -129,8 +123,8 @@ jobs:
               DbConnectionInfo = @{
                  Engine = "SqlServer" 
                  Server = "${{ github.event.inputs.db_server }}"
-                 Username = "${{ github.event.inputs.db_username }}"
-                 Password = "${{ github.event.inputs.db_password }}"
+                 Username = "${{ secrets.SQL_ADMIN_USERNAME }}"
+                 Password = "${{ secrets.SQL_ADMIN_PASSWORD }}"
                  UseIntegratedSecurity = `$false
               }
               IsSandbox = `$true

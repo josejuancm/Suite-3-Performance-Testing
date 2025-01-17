@@ -152,7 +152,7 @@ jobs:
           Import-Module .\Install-EdFiOdsSwaggerUI.psm1
           `$parameters = @{
               PackageVersion = "7.2.1201"
-              WebApiVersionUrl = "https://${{ github.event.inputs.web_api_vm_name }}/WebApi"
+              WebApiVersionUrl = "https://edfi-ods/WebApi"
               PrePopulatedKey = "${{ secrets.POPULATED_KEY }}"
               PrePopulatedSecret = "${{ secrets.POPULATED_SECRET }}"
           }

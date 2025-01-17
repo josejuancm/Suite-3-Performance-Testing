@@ -71,7 +71,7 @@ jobs:
             --scripts '
             # Download and extract WebApi Installer
             Invoke-WebRequest -Uri "https://pkgs.dev.azure.com/ed-fi-alliance/Ed-Fi-Alliance-OSS/_apis/packaging/feeds/EdFi@Release/nuget/packages/EdFi.Suite3.Installer.WebApi/versions/${{ github.event.inputs.version }}/content" -OutFile "C:/Temp/EdFi.Suite3.Installer.WebApi.${{ github.event.inputs.version }}.nupkg"
-            Rename-Item -Path "C:/Temp/EdFi.Suite3.Installer.WebApi.${{ github.event.inputs.version }}.nupkg" -NewName "EdFi.Suite3.Installer.WebApi.zip"
+            Rename-Item -Path "C:/Temp/EdFi.Suite3.Installer.WebApi.${{ github.event.inputs.web_api_version }}.nupkg" -NewName "EdFi.Suite3.Installer.WebApi.zip"
             Expand-Archive -Path "C:/Temp/EdFi.Suite3.Installer.WebApi.zip" -DestinationPath "C:/Temp/EdFi.Suite3.Installer.WebApi" -Force
 
             # Download and extract SwaggerUI

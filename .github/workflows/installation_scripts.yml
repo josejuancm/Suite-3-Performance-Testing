@@ -50,7 +50,7 @@ jobs:
         with:
           creds: '{"clientId":"${{ env.ARM_CLIENT_ID }}","clientSecret":"${{ env.ARM_CLIENT_SECRET }}","subscriptionId":"${{ env.ARM_SUBSCRIPTION_ID }}","tenantId":"${{ env.ARM_TENANT_ID }}"}'
 
-      - name: Download Components on First VM
+      - name: Download Components on Web Server VM
         run: |
           az vm run-command invoke \
             --command-id RunPowerShellScript \
@@ -72,7 +72,7 @@ jobs:
             Rename-Item -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.nupkg" -NewName "EdFi.Suite3.Installer.SandboxAdmin.zip"
             Expand-Archive -Path "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin.zip" -DestinationPath "C:/Temp/EdFi.Suite3.Installer.SandboxAdmin" -Force'
 
-      - name: Download RestApi Databases on Second VM
+      - name: Download RestApi Databases on SQL Server VM
         run: |
           az vm run-command invoke \
             --command-id RunPowerShellScript \
